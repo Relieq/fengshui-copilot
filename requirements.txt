@@ -1,0 +1,6 @@
+Django>=5.2.6
+langchain>=0.3.27
+langchain-ollama>=0.3.7
+ollama>=0.5.3
+langgraph>=0.6.7
+python-dotenv>=1.1.1
