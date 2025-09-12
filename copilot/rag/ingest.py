@@ -9,8 +9,6 @@ from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
-from regex import splititer
-from sympy.multipledispatch.dispatcher import source
 
 from copilot.rag.settings import CHUNK_SIZE, CHUNK_OVERLAP, ensure_dirs, CHROMA_DIR, EMBEDDING_MODEL, COLLECTION_NAME, \
     CORPUS_DIR

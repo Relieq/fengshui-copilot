@@ -14,7 +14,7 @@ CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 120))
 TOP_K = int(os.getenv("RAG_TOP_K", 4))
 
 # Model
-EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "nomic-embed-text")
+EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL")
 LLM_MODEL = os.getenv("LLM_MODEL")
 
 # Đảm bảo thư mục tồn tại

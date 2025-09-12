@@ -206,7 +206,7 @@ chúng làm nguồn tham khảo để tạo câu trả lời.
 ## Các bước thực hiện
 1. Cài đặt các package cần thiết: langchain-chroma, chromadb, langchain-textsplitters
 
-    Pull embedding model cho Ollama: `ollama pull nomic-embed-text`
+    Pull embedding model cho Ollama: `ollama pull bge-m3` hoặc nomic-embed-text
 2. Chuẩn bị tài liệu phong thủy:
 * Tạo thư mục fengshui-copilot/data/corpus chưa các file tài liệu về phong thủy (md, txt, pdf,...)
 * Tôi có cho sẵn một số tài liệu, bạn đọc có thể bổ sung thêm.
@@ -460,6 +460,8 @@ Output:
 
 ```
 * Chạy lệnh rag_ask:
+
+Mọi người có thể xóa index trong \chroma xem trước kết quả như nào, sau đó hẵng ingest lại dữ liệu để thấy hiệu quả.
 ```bash
 python manage.py rag_ask --q "Mệnh Kim hợp màu gì?"
 python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?" --k 6
@@ -483,3 +485,292 @@ Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_tr
 Sources: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf, phong_thuy_toan_tap.pdf
 Took 299.03s
 ```
+
+# Bài 4: Đánh giá RAG
+* Mục tiêu: có các con số để chứng minh hệ RAG hoạt động.
+* Evaluation set: 1 file jsonl, mỗi dòng gồm:
+  * q: câu hỏi
+  * sources: danh sách tên file trong corpus được coi là nguồn đúng (file-level)
+  * ref: câu trả lời tham chiếu ngắn
+* Trong bài này, chúng ta sẽ triển khai 3 cách đánh giá (2 đánh giá chất lượng truy vấn tài liệu, 1 đánh giá chất lượng 
+câu trả lời):
+  * Recall@k (file-level): % câu hỏi mà trong số tok-k chunk lấy về có ít nhất 1 chunk từ nguồn đúng.
+  * MRR@k (Mean Reciprocal Rank (xếp hạng nghịch đảo trung bình)): trung bình của 1/rank với rank là vị trí chunk khớp 
+  đúng đầu tiên với sources trong top-k (không khớp → 0).
+  * Answer quality: chấm thô bằng "lexical" F1 (F1 score bản từ ngữ, so trùng từ giữa answer và ref). Có thể kèm model 
+  cho điểm 0..1 dựa vào đúng/sai của nội dung.
+
+_Lưu ý:_ Ở đây chúng ta chỉ mới triển khai ngang file-level, về sau có thể nâng cấp lên chunk-level (tính
+trùng từ trong chunk lấy về với chunk đúng).
+
+## Các bước thực hiện
+### 1. Chuẩn bị dữ liệu đánh giá
+* Lần này tôi có bổ sung thêm 4 file tài liệu nữa vào mục data (ban đầu 2). Ở bước này, chúng ta có thể nhờ các AI agent 
+tạo giúp chúng ta file dữ liệu đánh giá qa.jsonl, mọi người có thể tham khảo prompt đơn giản sau:
+```
+Hiện tại tôi đang muốn tạo một tập dữ liệu đánh giá cho mô hình RAG trong project của tôi với tập eval set là 1 file .jsonl mỗi dòng gồm: 
+- q: câu hỏi 
+- sources: danh sách tên file trong corpus được coi là nguồn đúng (file-level) 
+- ref (tùy chọn): câu trả lời tham chiếu ngắn 
+
+Mẫu: 
+{"q": "Mệnh Kim hợp màu gì?", "sources": ["ngu_hanh_co_ban.md"], "ref": "Mệnh Kim hợp trắng, xám, ánh kim; tương sinh Thổ như vàng, nâu."} 
+{"q": "Nhà hướng Đông Nam hợp mệnh nào?", "sources": ["huong_nha_tom_tat.txt"], "ref": "Đông Nam thuộc Mộc, thường hợp mệnh Mộc và mệnh Hoả (tương sinh)."} 
+{"q": "Ngũ hành gồm những yếu tố nào?", "sources": ["ngu_hanh_co_ban.md"], "ref": "Kim, Mộc, Thuỷ, Hoả, Thổ."} 
+
+Về phần source, tôi có gửi cho bạn các nguồn như trên, bạn hãy load và đọc kĩ các file rồi tạo giúp tôi file jsonl phía trên. 
+Tài liệu tìm được khá hạn chế, nếu có thể bạn hãy tự tìm kiếm, tải về, phân tích tài liệu rồi viết thêm vào file jsonl giúp tôi. 
+
+Chú ý phải làm cho thật chính xác, phải có ít nhất 100 câu, để tôi có thể đánh giá kết quả mô hình của bản thân một cách có hiệu quả.
+```
+### 2. Tạo 2 lệnh đánh giá chất lượng retrieval tài liệu: Recall@k và MRR@k
+* Tạo file copilot/rag/eval_retrieval.py
+* Tạo hàm đọc file jsonl:
+```python
+def read_jsonl(path: Path):
+    if not path.exists():
+        raise FileNotFoundError(path)
+    with open(path, 'r', encoding='utf') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                yield json.loads(line)
+```
+* Tạo lệnh:
+```python
+class Command(BaseCommand):
+    help = "Đánh giá retrieval ở file-level với 2 phương pháp: Recall@k và MRR@k"
+
+    def add_arguments(self, parser):
+        parser.add_argument("--file", default=str(DATA_DIR / "eval" / "qa.jsonl"))
+        parser.add_argument("--k", type=int, default=TOP_K)
+
+    def handle(self, *args, **opts):
+        eval_path = Path(opts["file"])
+        k = opts["k"]
+
+        data = list(read_jsonl(eval_path))
+        if not data:
+            raise CommandError(f"Eval set rỗng: {eval_path}")
+
+        retriever = get_retriever(k)
+
+        recalls, mrrs = [], []
+        t0 = time.time()
+
+        for i, item in enumerate(data):
+            q = item["q"]
+            gold = item.get("sources", "")
+            docs = retriever.get_relevant_documents(q)
+
+            ranked_src = [d.metadata.get("source", "") for d in docs]
+            hit = any(r in gold for r in ranked_src)
+            recalls.append(hit)
+
+            rr = 0.0
+            for rank, src in enumerate(ranked_src):
+                if src in gold:
+                    rr = 1.0 / (rank + 1)
+                    break
+            mrrs.append(rr)
+
+            self.stdout.write(
+                f"[i] Q: {q}\n"
+                f"gold: {gold}\n"
+                f"got: {ranked_src}\n"
+                f"Hit: {hit}, Reciprocal Rank (rr): {rr:.3f}\n"
+            )
+
+        dt = time.time() - t0
+        self.stdout.write(self.style.SUCCESS(
+              f"\nDone in {dt:.2f}s | k={k}\n"
+              f"Recall@{k}: {mean(recalls):.3f} | MRR@{k}: {mean(mrrs):.3f} "
+              f"{len(data)} câu."
+        ))
+```
+* Test thử:
+```bash
+python manage.py eval_retrieval
+```
+Output:
+```
+...
+[101] Q: Cửa phụ có cần lựa chọn theo tuổi gia chủ không?
+gold: ['phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf']
+got: ['tu-vi-dau-so-toan-thu-tran-doan.pdf', 'TU_VI_THUC_HANH.pdf', 'phong_thuy_toan_tap.pdf', 'fengshui_phong_thuy_toan_tap.pdf']
+Hit: False, Reciprocal Rank (rr): 0.000
+
+Done in 4.93s | k=4
+Recall@4: 0.337 | MRR@4: 0.097 101 câu.
+```
+### 3. Tạo lệnh đánh giá chất lượng câu trả lời dựa trên Lexical F1 (tùy chọn + LLM judge mini)
+* Tạo file copilot/rag/eval_answer.py
+* Viết hàm tokenize đơn giản chuyển câu thành tập các từ:
+```python
+def tokenize(s: str) -> list[str]:
+    return re.findall(r"[0-9A-Za-zÀ-ỹ]+", (s or "").strip())
+```
+* Viết hàm tính F1 score:
+```python
+def f1_score(pred: str, ref: str) -> float:
+    p = tokenize(pred)
+    r = tokenize(ref)
+    if not p or not r:
+        return 0.0
+
+    p_set = set(p)
+    r_set = set(r)
+    overlap = len(p_set & r_set)
+
+    if overlap == 0:
+        return 0.0
+
+    precision = overlap / len(p_set)
+    recall = overlap / len(r_set)
+    return 2 * (precision * recall) / (precision + recall)
+```
+* Tạo prompt cho LLM đánh giá (chú ý phải "{{" chứ không phải "{")
+```
+JUDGE_PROMPT = ChatPromptTemplate.from_messages([
+    ("system",
+     "Bạn là chuyên gia, giám khảo về huyền học. Cho điểm 0..1 về ĐỘ CHÍNH XÁC so với câu tham chiếu. "
+     "Chỉ chấm độ đúng (không chấm văn phong). Trả về đúng JSON: "
+     '{{"score": <float>, "rationale": "<ngắn gọn>"}}'),
+    ("human",
+     "Câu hỏi: {question}\nTham chiếu: {ref}\nTrả lời: {pred}\n"
+     "Chấm điểm và giải thích ngắn.")
+])
+```
+* Tạo lệnh:
+```python
+class Command(BaseCommand):
+    help = "Đánh giá chất lượng câu trả lời: F1 lexical + (tuỳ chọn) LLM judge mini."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--file", default=str(DATA_DIR / "eval" / "qa.jsonl"))
+        parser.add_argument("--k", type=int, default=TOP_K)
+        parser.add_argument("--model", default=LLM_MODEL)
+        parser.add_argument("--judge", action="store_true",
+                            help="Bật chấm điểm bằng LLM")
+
+    def handle(self, *args, **opts):
+        eval_path = Path(opts["file"])
+        k = opts["k"]
+        model = opts["model"]
+        use_judge = opts["judge"]
+
+        data = list(read_jsonl(eval_path))
+        if not data:
+            raise CommandError(f"Eval set rỗng: {eval_path}")
+
+        retriever = get_retriever(k)
+        llm = ChatOllama(model=model)
+
+        f1s, judge_scores = [], []
+        t0 = time.time()
+
+        for i, item in enumerate(data):
+            q = item["q"]
+            ref = item.get("ref", "").strip()
+
+            docs = retriever.get_relevant_documents(q)
+
+            ctx_lines = []
+
+            for j, d in enumerate(docs):
+                snippet = d.page_content.strip().replace("\n", " ")
+
+                if len(snippet) > 500:
+                    snippet = snippet[:500] + "..."
+                src = d.metadata.get("source", "")
+                ctx_lines.append(f"[{j + 1}] {snippet} (SOURCE: {src})")
+
+            context = "\n\n".join(ctx_lines) if ctx_lines else "(Không có ngữ cảnh)"
+
+            pred = (ANSWER_PROMPT | llm).invoke({
+                "question": q,
+                "context": context
+            }).content.strip()
+
+            f1 = f1_score(pred, ref)
+            f1s.append(f1)
+            line = f"[{i+1}] Q: {q}\n REF: {ref}\n PRED: {pred}\n F1: {f1:.3f}"
+
+            if use_judge:
+                judge = (JUDGE_PROMPT | llm).invoke({
+                    "question": q,
+                    "ref": ref,
+                    "pred": pred
+                }).content.strip()
+
+                m = re.search(r"\{.*\}", judge, re.DOTALL)
+                if m:
+                    try:
+                        score = float(json.loads(m.group(0))["score"])
+                    except Exception:
+                        score = 0.0
+
+                judge_scores.append(score)
+                line += f" | Judge: {score:.3f} ({judge})"
+
+            self.stdout.write(line + "\n")
+
+        dt = time.time() - t0
+        summary = f"\nDone in {dt:.2f}s | k={k}\n Avg F1: {mean(f1s):.3f}"
+        if use_judge and judge_scores:
+            summary += f" | Avg Judge: {mean(judge_scores):.3f}"
+        self.stdout.write(self.style.SUCCESS(summary))
+```
+* Test thử:
+
+Phần này nếu máy ai không đủ tài nguyên có thể xóa bớt nội dung trong file qa.jsonl để giảm số câu hỏi.
+  * 
+    ```bash
+    python manage.py eval_answer
+    ```
+    Output:
+    ```
+    [1] Q: Quy luật Tương Sinh trong Ngũ Hành diễn ra theo thứ tự nào?
+     REF: Thủy sinh Mộc; Mộc sinh Hỏa; Hỏa sinh Thổ; Thổ sinh Kim; Kim sinh Thủy.
+     PRED: Quy luật Tương Sinh trong Ngũ Hành diễn ra theo thứ tự: Thủy sinh Mộc, Hỏa sinh Thổ, Thổ sinh Kim, Kim sinh Thủy.
+    
+    Nguồn:
+    - phong_thuy_toan_tap.pdf
+    - TU_VI_THUC_HANH.pdf
+    - tu-vi-dau-so-toan-thu-tran-doan.pdf
+     F1: 0.293
+    [2] Q: Ngũ hành tương khắc theo thứ tự nào?
+     REF: Thủy khắc Hỏa; Hỏa khắc Kim; Kim khắc Mộc; Mộc khắc Thổ; Thổ khắc Thủy.
+     PRED: Ngũ hành tương khắc theo thứ tự: Kim khắc Hỏa, Thủy khắc Hỏa, Mộc khắc Thổ, Thổ khắc Thủy, Hỏa khắc Kim, Mộc khắc Kim.
+    
+    Nguồn:
+    - TU_VI_THUC_HANH.pdf
+    - tu-vi-dau-so-toan-thu-tran-doan.pdf
+    - fengshui_phong_thuy_toan_tap.pdf
+    - phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+     F1: 0.261
+    ...
+    ```
+  *
+    ```bash
+    python manage.py eval_answer --judge
+    ```
+    Output:
+    ```
+    [1] Q: Quy luật Tương Sinh trong Ngũ Hành diễn ra theo thứ tự nào?
+     REF: Thủy sinh Mộc; Mộc sinh Hỏa; Hỏa sinh Thổ; Thổ sinh Kim; Kim sinh Thủy.
+     PRED: Quy luật Tương Sinh trong Ngũ Hành diễn ra theo thứ tự: Kim sinh Thủy, Thủy sinh Mộc, Mộc sinh Hỏa, Hỏa sinh Thổ, Thổ sinh Kim.
+    
+    Nguồn: phong_thuy_toan_tap.pdf, TU_VI_THUC_HANH.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf
+     F1: 0.293 | Judge: 0.400 ({"score": 0.4, "rationale": "Danh sách thứ tự trong quy luật Tương Sinh được đưa ra là chính xác nhưng không theo trình tự vòng tròn Ngũ Hành (Kim, Thủy, Mộc, Hỏa, Thổ). Trình tự vòng tròn Ngũ Hành thường được sử dụng để miêu tả các mối quan hệ và quy luật của Ngũ Hành, vì vậy một danh sách thứ tự theo đúng vòng tròn có thể giúp người đọc dễ dàng nhận biết hơn về sự liên kết giữa các yếu tố trong Ngũ Hành."})
+    
+    Done in 77.75s | k=4
+     Avg F1: 0.293 | Avg Judge: 0.400
+    ```
+* Chúng ta có thể dựa vào các con số này để đánh giá và cải thiện hệ thống RAG của mình, ví dụ:
+  * Nếu Recall@k thấp, có thể do tài liệu không đủ hoặc quá trình embedding/retrieval chưa tốt.
+  * Nếu F1 thấp, có thể do prompt chưa tốt hoặc LLM chưa hiểu đúng ngữ cảnh.
+  * Dựa vào các câu hỏi cụ thể mà hệ thống trả lời sai để điều chỉnh prompt, thêm tài liệu, hoặc tinh chỉnh tham số:
+    * Tăng k
+    * Thay đổi chunk size/overlap
+    * Thay embedding model
