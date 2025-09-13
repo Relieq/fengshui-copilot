@@ -1,10 +1,9 @@
 import time
 
 from django.core.management import BaseCommand
-from langchain_core.language_models import LLM
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
 
+from copilot.llm.provider import get_chat
 from copilot.rag.retrieve import get_retriever
 from copilot.rag.settings import TOP_K, LLM_MODEL
 
@@ -58,7 +57,7 @@ class Command(BaseCommand):
 
         context = "\n\n".join(ctx_lines) if ctx_lines else "(Không có ngữ cảnh)"
 
-        llm = ChatOllama(model=model, temperature=temp)
+        llm = get_chat(model, temperature=temp)
         chain = ANSWER_PROMPT | llm
 
         t0 = time.time()

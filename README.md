@@ -227,7 +227,7 @@ CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 120))
 TOP_K = int(os.getenv("RAG_TOP_K", 4))
 
 # Model
-EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "nomic-embed-text")
+EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL") # Tôi dùng bge-m3
 LLM_MODEL = os.getenv("LLM_MODEL")
 
 # Đảm bảo thư mục tồn tại
@@ -774,3 +774,5 @@ Phần này nếu máy ai không đủ tài nguyên có thể xóa bớt nội d
     * Tăng k
     * Thay đổi chunk size/overlap
     * Thay embedding model
+
+# Bài 5: 

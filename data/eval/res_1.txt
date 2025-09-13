@@ -1,0 +1,642 @@
+python manage.py eval_answer --judge
+D:\Pycharm\Project\fengshui-copilot\copilot\management\commands\eval_answer.py:87: LangChainDeprecationWarning: The method `BaseRetriever.get_relevant_documents` was deprecated in langchain-core 0.1.46 and will be removed in 1.0. Use :meth:`~invoke` instead.
+  docs = retriever.get_relevant_documents(q)
+[1] Q: Ngũ hành gồm những yếu tố nào?
+ REF: Kim, Mộc, Thủy, Hỏa, Thổ.
+ PRED: Ngũ hành là một khái niệm cơ bản trong phong thủy, đại diện cho sự tương tác của các yếu tố tự nhiên ảnh hưởng đến môi trường sống và vận mệnh con người. Tuy nhiên, từ tài liệu hiện có, tôi không tìm thấy chi tiết cụ thể liệt kê các yếu tố của Ngũ hành. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không liệt kê các yếu tố ngũ hành (Kim, Mộc, Thủy, Hỏa, Thổ) mà phủ nhận thông tin từ tài liệu, sai hoàn toàn so với tham chiếu."})
+[2] Q: Quy luật Tương Sinh trong Ngũ Hành diễn ra theo thứ tự nào?
+ REF: Thủy sinh Mộc; Mộc sinh Hỏa; Hỏa sinh Thổ; Thổ sinh Kim; Kim sinh Thủy.
+ PRED: Từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể về quy luật Tương Sinh trong Ngũ Hành. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: Không sử dụng nguồn cụ thể.
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời phủ nhận sự tồn tại của quy luật Tương Sinh, trong khi tham chiếu cung cấp chuỗi chính xác chuẩn của Ngũ Hành."})
+[3] Q: Ngũ hành tương khắc theo thứ tự nào?
+ REF: Thủy khắc Hỏa; Hỏa khắc Kim; Kim khắc Mộc; Mộc khắc Thổ; Thổ khắc Thủy.
+ PRED: Ngũ hành tương khắc theo thứ tự vòng tròn: Thổ khắc Thủy (đất chặn dòng nước), Thủy khắc Hỏa (nước dập lửa), Hỏa khắc Kim (lửa nung chảy kim loại), Kim khắc Mộc (kim loại chặt cây), và Mộc khắc Thổ (cây cắm rễ vào đất). Quy luật này giúp cân bằng năng lượng trong phong thủy, tránh các yếu tố xung đột trong không gian sống. Thứ tự này dựa trên nguyên lý âm dương ngũ hành cổ điển.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.148 | Judge: 1.000 ({"score":1.0,"rationale":"Thứ tự ngũ hành tương khắc khớp chính xác với tham chiếu, chỉ khác điểm bắt đầu trong vòng tròn nhưng nội dung đúng hoàn toàn."})
+[4] Q: Vạn vật thuộc hành Mộc gồm những gì?
+ REF: Thảo mộc, gỗ, giấy, màu xanh lục, cột trụ, tranh phong cảnh.
+ PRED: Tôi không chắc từ tài liệu hiện có về danh sách chi tiết các vạn vật thuộc hành Mộc trong phong thủy, vì các tài liệu chủ yếu giới thiệu tổng quát về phong thủy và Tử Vi
+Đẩu Số mà không đi sâu vào ngũ hành. Trong phong thủy cơ bản, hành Mộc thường liên quan đến sự sinh trưởng, màu xanh lá, phương Đông và các yếu tố tự nhiên như cây cỏ, nhưng cần tài liệu chuyên sâu hơn để liệt kê đầy đủ.
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.070 | Judge: 0.300 ({"score": 0.3, "rationale": "Trả lời chỉ đề cập tổng quát (cây cỏ, màu xanh lá) mà không liệt kê chính xác các ví dụ như tham chiếu (thảo mộc, gỗ, giấy, v.v.), và thừa nhận thiếu thông tin chi tiết."})
+[5] Q: Vạn vật thuộc hành Hỏa gồm những gì?
+ REF: Hình mặt trời, nến, tam giác, màu đỏ, vật dụng thủ công, tranh mặt trời hoặc lửa.
+ PRED: Tôi không chắc từ tài liệu hiện có về danh sách cụ thể vạn vật thuộc hành Hỏa trong phong thủy, vì các nguồn chủ yếu tập trung vào Tử Vi Đẩu Số và giới thiệu tổng quát về
+ phong thủy mà không chi tiết ngũ hành. Trong phong thủy truyền thống, hành Hỏa thường liên quan đến lửa, màu đỏ, hướng Nam, và các vật như nến, đèn, nhưng cần tài liệu chuyên sâu hơn để liệt kê đầy đủ.
+Nguồn: phong_thuy_toan_tap.pdf, TU_VI_THUC_HANH.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf
+ F1: 0.102 | Judge: 0.400 ({"score": 0.4, "rationale": "Trả lời đề cập đúng một phần (màu đỏ, nến, lửa) nhưng thiếu hình mặt trời, tam giác, vật dụng thủ công, tranh mặt trời và thừa nhận không đầy đủ."})
+[6] Q: Vạn vật thuộc hành Thổ gồm những gì?
+ REF: Đất sét, gạch, sành sứ, bê tông, đá, hình vuông, màu vàng, cam, nâu.
+ PRED: Từ tài liệu hiện có, không có thông tin chi tiết liệt kê vạn vật thuộc hành Thổ trong phong thủy. Hành Thổ thường đại diện cho đất đai, sự ổn định và nuôi dưỡng, nhưng các ví dụ cụ thể như núi non hay vật liệu đất sét không được đề cập rõ ràng. Tôi không chắc từ tài liệu hiện có để trả lời đầy đủ.
+
+Nguồn: phong_thuy_toan_tap.pdf, fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.026 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp danh sách vật thuộc hành Thổ theo tham chiếu, mà phủ nhận thông tin chi tiết, dẫn đến độ chính xác bằng không."})
+[7] Q: Vạn vật thuộc hành Kim gồm những gì?
+ REF: Kim loại, hình tròn hoặc mái vòm, vật dụng kim khí, cửa và bậc cửa, đồ dùng nhà bếp, màu trắng, xám, bạc, vàng ươm, tiền, đồng hồ.
+ PRED: Dựa trên các tài liệu phong thủy cơ bản, hành Kim đại diện cho kim loại, sự sắc bén và hướng Tây, nhưng ngữ cảnh hiện có không liệt kê chi tiết vạn vật thuộc hành này. Tô
+i không chắc từ tài liệu hiện có để đưa ra danh sách đầy đủ. Bạn có thể tham khảo thêm sách chuyên sâu về ngũ hành để biết cụ thể như kim loại, màu trắng, đồ dùng bằng thép, v.v.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.186 | Judge: 0.300 ({"score": 0.3, "rationale": "Trả lời chỉ đề cập một số yếu tố cơ bản như kim loại, màu trắng, đồ dùng bằng thép, nhưng thiếu hầu hết các chi tiết cụ thể từ tham chiếu (hình tròn, cửa, đồ dùng nhà bếp, màu xám/bạc/vàng ươm, tiền, đồng hồ) và thể hiện sự không chắc chắn thay vì liệt kê đầy đủ."})
+[8] Q: Vạn vật thuộc hành Thủy gồm những gì?
+ REF: Sông, suối, ao hồ, màu xanh dương và đen, gương, kính, các đường uốn khúc, đài phun nước.
+ PRED: Tôi không chắc từ tài liệu hiện có về các vạn vật thuộc hành Thủy trong phong thủy, vì ngữ cảnh chủ yếu giới thiệu tổng quát về phong thủy và tử vi mà không chi tiết hóa ngũ hành. Bạn có thể cung cấp thêm tài liệu cụ thể để tôi hỗ trợ tốt hơn.
+ F1: 0.062 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp bất kỳ thông tin nào về các vật thuộc hành Thủy, chỉ thừa nhận thiếu kiến thức và yêu cầu thêm tài liệu, không khớp với tham chiếu."})
+[9] Q: Mùa xuân thuộc hành gì?
+ REF: Mộc.
+ PRED: Theo kiến thức phong thủy cơ bản, mùa xuân thường liên quan đến sự sinh sôi và phát triển, nhưng từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể về hành ngũ hành
+ tương ứng với mùa xuân. Phong thủy nhấn mạnh sự hài hòa với tự nhiên và chu kỳ thời gian, như trong các tài liệu giới thiệu về nguồn gốc và ứng dụng môi trường sống. Tôi không chắc từ tài liệu hiện có để xác định chính xác hành của mùa xuân.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không xác định đúng mùa xuân thuộc hành Mộc theo ngũ hành, mà còn phủ nhận thông tin có sẵn, dẫn đến độ chính xác bằng không."})
+[10] Q: Mùa hè thuộc hành gì?
+ REF: Hỏa.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp không đề cập trực tiếp đến mối liên hệ giữa mùa hè và ngũ hành trong phong thủy. Trong kiến thức phong thủy cơ bản, mùa hè thường thuộc hành Hỏa, tượng trưng cho sự nóng bức và phát triển mạnh mẽ, nhưng điều này cần xác nhận từ tài liệu chuyên sâu hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.032 | Judge: 0.900 ({"score": 0.9, "rationale": "Trả lời xác nhận đúng mùa hè thuộc hành Hỏa theo kiến thức phong thủy cơ bản, dù thể hiện sự không chắc chắn từ nguồn tài liệu."})
+[11] Q: Mùa thu thuộc hành gì?
+ REF: Kim.
+ PRED: Theo kiến thức phong thủy cơ bản trong tài liệu, các mùa được liên hệ với ngũ hành, nhưng tài liệu hiện tại không đề cập chi tiết đến mùa thu. Tôi không chắc từ tài liệu hiện có về hành cụ thể của mùa thu. Bạn có thể tham khảo thêm sách phong thủy chuyên sâu để xác nhận.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không xác nhận mùa thu thuộc hành Kim mà bày tỏ sự không chắc chắn và không đề cập trực tiếp."})
+[12] Q: Mùa đông thuộc hành gì?
+ REF: Thủy.
+ PRED: Dựa trên ngữ cảnh cung cấp, các tài liệu chủ yếu thảo luận về Tử Vi Đẩu Số và giới thiệu tổng quát về Phong Thủy như một khoa học môi trường và thiên thể, nhưng không đề
+cập cụ thể đến mối liên hệ giữa mùa đông và ngũ hành. Tôi không chắc từ tài liệu hiện có về việc mùa đông thuộc hành gì. Nếu cần thông tin chi tiết hơn, bạn có thể cung cấp thêm ngữ cảnh từ sách Phong Thủy Toàn Tập.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.027 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời né tránh và không xác nhận mùa đông thuộc hành Thủy theo tham chiếu, thay vào đó phủ nhận thông tin từ nguồn."})
+[13] Q: Kim sinh hành nào trong Ngũ Hành?
+ REF: Kim sinh Thủy.
+ PRED: Tôi không chắc từ tài liệu hiện có về mối quan hệ sinh hành cụ thể của Kim trong Ngũ Hành, vì các nguồn chủ yếu tập trung vào Tử Vi Đẩu Số và giới thiệu cơ bản về Phong Thủy mà không chi tiết hóa quy luật sinh khắc. Bạn có thể cần tham khảo thêm tài liệu chuyên sâu về Ngũ Hành để có thông tin chính xác. Nếu có ngữ cảnh bổ sung, tôi sẽ hỗ trợ tốt hơn.
+
+Nguồn: TU_VI_THUC_HANH.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf, phong_thuy_toan_tap.pdf
+ F1: 0.067 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không cung cấp thông tin chính xác 'Kim sinh Thủy' mà né tránh và thừa nhận không chắc chắn, không khớp với tham chiếu."})
+[14] Q: Mộc sinh hành nào?
+ REF: Mộc sinh Hỏa.
+ PRED: Trong phong thủy, ngũ hành tương sinh là một nguyên lý cơ bản, nhưng từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể về mối quan hệ "Mộc sinh hành nào". Các nguồn chủ yếu tập trung vào giới thiệu tổng quát về phong thủy và tử vi đẩu số, chưa đề cập chi tiết đến ngũ hành. Tôi không chắc từ tài liệu hiện có, bạn có thể cung cấp thêm ngữ cảnh để tôi hỗ trợ chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf, TU_VI_THUC_HANH.pdf, fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.045 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác về ngũ hành tương sinh (Mộc sinh Hỏa), thay vào đó phủ nhận có dữ liệu dù đây là kiến thức cơ bản trong huyền học."})
+[15] Q: Hỏa sinh hành nào?
+ REF: Hỏa sinh Thổ.
+ PRED: Tôi không chắc từ tài liệu hiện có về mối quan hệ sinh hành cụ thể của Hỏa trong ngũ hành phong thủy, vì các tài liệu chủ yếu giới thiệu tổng quát về phong thủy và tử vi mà không đề cập chi tiết đến phần này. Bạn có thể cần tham khảo thêm tài liệu chuyên sâu về ngũ hành để có thông tin chính xác.
+
+Nguồn: Không sử dụng nguồn cụ thể do thiếu thông tin liên quan.
+ F1: 0.062 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác về Hỏa sinh Thổ, mà thừa nhận không chắc và né tránh trả lời trực tiếp."})
+[16] Q: Thổ sinh hành nào?
+ REF: Thổ sinh Kim.
+ PRED: Trong ngũ hành phong thủy, Thổ sinh Kim, thể hiện sự nuôi dưỡng và hỗ trợ từ yếu tố đất đai cho kim loại. Tuy nhiên, từ các tài liệu hiện có, không có thông tin chi tiết trực tiếp về quy luật tương sinh này. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: Không sử dụng nguồn cụ thể.
+ F1: 0.113 | Judge: 0.700 ({"score": 0.7, "rationale": "Thông tin cốt lõi 'Thổ sinh Kim' đúng, nhưng phần không chắc chắn và phủ nhận thông tin làm giảm độ chính xác tổng thể."})
+[17] Q: Thủy sinh hành nào?
+ REF: Thủy sinh Mộc.
+ PRED: Trong phong thủy, ngũ hành có mối quan hệ tương sinh, nhưng từ tài liệu hiện có, không có thông tin cụ thể về hành mà Thủy sinh. Tôi không chắc từ tài liệu hiện có.
+Nguồn: phong_thuy_toan_tap.pdf, TU_VI_THUC_HANH.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf, fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.087 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin về mối quan hệ tương sinh Thủy sinh Mộc, vốn là kiến thức cơ bản trong ngũ hành."})
+[18] Q: Thủy khắc hành nào?
+ REF: Thủy khắc Hỏa.
+ PRED: Trong phong thủy và ngũ hành, Thủy thường khắc Hỏa vì nước có khả năng dập tắt lửa, tạo nên mối quan hệ tương khắc cơ bản. Tuy nhiên, từ các tài liệu hiện có, không có thông tin chi tiết cụ thể về mối quan hệ này. Tôi không chắc từ tài liệu hiện có để xác nhận thêm.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.107 | Judge: 0.700 ({"score": 0.7, "rationale": "Trả lời đúng về Thủy khắc Hỏa theo ngũ hành cơ bản, nhưng phần nghi ngờ thiếu thông tin làm giảm độ chính xác so với tham chiếu rõ ràng."})
+[19] Q: Hỏa khắc hành nào?
+ REF: Hỏa khắc Kim.
+ PRED: Trong ngũ hành phong thủy, Hỏa khắc Kim, vì lửa có khả năng nung chảy kim loại. Tuy nhiên, ngữ cảnh cung cấp chủ yếu tập trung vào Tử Vi Đẩu Số và giới thiệu tổng quát về phong thủy, không đề cập chi tiết đến mối quan hệ tương khắc này. Tôi không chắc từ tài liệu hiện có về các ví dụ cụ thể hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.087 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời xác nhận chính xác Hỏa khắc Kim theo ngũ hành, phù hợp với tham chiếu."})
+[20] Q: Kim khắc hành nào?
+ REF: Kim khắc Mộc.
+ PRED: Trong ngũ hành, theo nguyên lý cơ bản của Phong Thủy, Kim khắc Mộc vì kim loại có khả năng chặt đứt cây cỏ. Tuy nhiên, tài liệu hiện có chỉ đề cập tổng quát về Phong Thủy mà không chi tiết hóa mối quan hệ khắc chế cụ thể. Tôi không chắc từ tài liệu hiện có để xác nhận thêm.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.097 | Judge: 0.900 ({"score": 0.9, "rationale": "Trả lời đúng nội dung cốt lõi 'Kim khắc Mộc' phù hợp tham chiếu, nhưng phần nghi ngờ về nguồn làm giảm nhẹ độ chắc chắn."})
+[21] Q: Mộc khắc hành nào?
+ REF: Mộc khắc Thổ.
+ PRED: Trong ngũ hành phong thủy, Mộc đại diện cho sự sinh trưởng và thường được liên hệ với các yếu tố tự nhiên như cây cỏ. Tuy nhiên, từ tài liệu hiện có, không có thông tin cụ thể về hành mà Mộc khắc. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.080 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin cơ bản về ngũ hành (Mộc khắc Thổ), dẫn đến độ chính xác bằng 0."})
+[22] Q: Thổ khắc hành nào?
+ REF: Thổ khắc Thủy.
+ PRED: Trong phong thủy và ngũ hành, Thổ (Đất) có tính chất khắc chế Thủy (Nước), vì đất có thể chặn dòng chảy của nước. Tuy nhiên, từ các tài liệu hiện có, không có thông tin chi tiết cụ thể về mối quan hệ tương khắc này. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.115 | Judge: 0.800 ({"score": 0.8, "rationale": "Trả lời xác nhận đúng Thổ khắc Thủy, nhưng phần sau phủ nhận thông tin từ tài liệu làm giảm độ chắc chắn."})
+[23] Q: Mệnh Kim hợp màu gì?
+ REF: Trắng, xám, bạc, vàng; và hợp vàng–nâu vì Thổ sinh Kim.
+ PRED: Dựa trên các tài liệu về phong thủy và tử vi được cung cấp, không có thông tin cụ thể về màu sắc hợp với mệnh Kim. Tôi không chắc từ tài liệu hiện có để đưa ra câu trả lời chính xác. Bạn có thể cần tham khảo thêm nguồn chuyên sâu về ngũ hành phong thủy.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.094 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời phủ nhận có thông tin về màu hợp mệnh Kim, không khớp với tham chiếu liệt kê trắng, xám, bạc, vàng và vàng-nâu."})
+[24] Q: Mệnh Mộc hợp màu gì?
+ REF: Màu xanh lá; cũng hợp đen hoặc xanh dương vì Thủy sinh Mộc.
+ PRED: Dựa trên kiến thức phong thủy cơ bản, mệnh Mộc tượng trưng cho sự phát triển và sinh sôi, thường hợp với các màu thuộc hành Mộc như xanh lá cây để tăng cường năng lượng,
+hoặc hành Thủy (xanh dương, đen) vì Thủy sinh Mộc. Tuy nhiên, tôi không chắc từ tài liệu hiện có vì các nguồn không đề cập chi tiết đến vấn đề này. Bạn có thể tham khảo thêm sách phong thủy chuyên sâu để xác nhận.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.235 | Judge: 0.900 ({"score": 0.9, "rationale": "Nội dung chính xác khớp tham chiếu về màu xanh lá, xanh dương, đen; phần không chắc chắn về nguồn không làm sai lệch thông tin cốt lõi."})
+[25] Q: Mệnh Thủy hợp màu gì?
+ REF: Đen, xanh dương; và hợp trắng, xám vì Kim sinh Thủy.
+ PRED: Tôi không chắc từ tài liệu hiện có về màu sắc hợp mệnh Thủy trong phong thủy. Các tài liệu chủ yếu tập trung vào giới thiệu cơ bản về phong thủy và tử vi đẩu số, chưa đề cập chi tiết đến ngũ hành và màu sắc tương sinh. Bạn có thể cần tham khảo thêm sách chuyên sâu về ngũ hành để có thông tin chính xác.
+
+Nguồn: phong_thuy_toan_tap.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf, TU_VI_THUC_HANH.pdf, fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.096 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không cung cấp thông tin đúng về màu hợp mệnh Thủy (đen, xanh dương; trắng, xám) mà chỉ thừa nhận thiếu kiến thức, không khớp tham chiếu."})
+[26] Q: Mệnh Hỏa hợp màu gì?
+ REF: Đỏ, cam, tím; và hợp xanh lá vì Mộc sinh Hỏa.
+ PRED: Dựa trên các tài liệu phong thủy cơ bản, mệnh Hỏa thường hợp với các màu thuộc hành Hỏa như đỏ, hồng, tím, hoặc hành Mộc sinh Hỏa như xanh lá, nhằm tăng cường năng lượng tích cực. Tuy nhiên, ngữ cảnh cung cấp chỉ giới thiệu tổng quát về phong thủy mà không chi tiết hóa màu sắc cho ngũ hành. Tôi không chắc từ tài liệu hiện có về các khuyến nghị cụ thể hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.177 | Judge: 0.850 ({"score": 0.85, "rationale": "Trả lời khớp phần lớn với tham chiếu (đỏ, tím, xanh lá; hồng gần cam), nhưng thay cam bằng hồng và thêm phần do dự không cần thiết làm giảm độ chính xác."})
+[27] Q: Mệnh Thổ hợp màu gì?
+ REF: Vàng, nâu, cam; và hợp đỏ hoặc hồng vì Hỏa sinh Thổ.
+ PRED: Theo phong thủy ngũ hành, mệnh Thổ hợp với các màu thuộc hành Thổ như vàng, nâu đất, và có thể bổ trợ bởi màu hành Hỏa (đỏ, cam, hồng) vì Hỏa sinh Thổ. Những màu này giúp tăng cường năng lượng ổn định và thịnh vượng cho người mệnh Thổ. Tránh màu xanh lá (Mộc khắc Thổ) để không làm suy yếu mệnh.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.253 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời liệt kê chính xác màu Thổ (vàng, nâu) và màu Hỏa bổ trợ (đỏ, cam, hồng), khớp với tham chiếu về màu sắc và lý do Hỏa sinh Thổ."})
+[28] Q: Người mệnh Thủy nên mặc quần áo màu gì?
+ REF: Trắng, xanh dương hoặc đen.
+ PRED: Dựa trên các tài liệu phong thủy cơ bản được cung cấp, không có thông tin cụ thể về màu sắc quần áo phù hợp cho người mệnh Thủy. Phong thủy nhấn mạnh vào sự hài hòa với môi trường sống, nhưng chi tiết về ngũ hành và màu sắc chưa được đề cập rõ ràng. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: Không sử dụng nguồn cụ thể do thiếu thông tin liên quan.
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời phủ nhận thông tin phong thủy cơ bản về màu sắc cho mệnh Thủy (trắng, xanh dương, đen), dẫn đến độ chính xác bằng không so với tham chiếu."})
+[29] Q: Người mệnh Hỏa nên mặc quần áo màu gì?
+ REF: Đỏ, vàng hoặc cam.
+ PRED: Người mệnh Hỏa nên ưu tiên mặc quần áo màu đỏ, cam hoặc tím để tăng cường năng lượng tương sinh. Những màu này thuộc hành Hỏa, giúp cân bằng và hỗ trợ vận mệnh. Tránh màu đen hoặc xanh dương (hành Thủy) vì chúng khắc chế Hỏa.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.077 | Judge: 0.750 ({"score": 0.75, "rationale": "Khớp đỏ và cam với tham chiếu, nhưng thay vàng bằng tím (tím hợp lý cho Hỏa nhưng không khớp chính xác)."})
+[30] Q: Trong cửa hàng vàng bạc, có nên sơn tường màu vàng không? Vì sao?
+ REF: Không; màu vàng làm trang sức kém sắc và phá vỡ cân bằng âm dương.
+ PRED: Tôi không chắc từ tài liệu hiện có về việc có nên sơn tường màu vàng trong cửa hàng vàng bạc, vì các nguồn chủ yếu tập trung vào phong thủy tổng quát, tử vi đẩu số và xây dựng nhà ở mà không đề cập cụ thể đến màu sắc cho loại hình kinh doanh này. Trong phong thủy, màu vàng thường liên quan đến hành Kim, phù hợp với vàng bạc, nhưng cần xem xét hướng cửa hàng và ngũ hành tổng thể để tránh xung khắc. Nếu có thêm chi tiết về vị trí hoặc bản mệnh chủ cửa hàng, tôi có thể tư vấn chính xác hơn.
+
+Nguồn đã dùng: Không có nguồn cụ thể từ ngữ cảnh.
+ F1: 0.093 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không khẳng định 'Không' như tham chiếu, mà gợi ý màu vàng có thể phù hợp với hành Kim, mâu thuẫn với lý do tham chiếu về làm kém sắc trang sức và phá vỡ âm dương."})
+[31] Q: Nhà hàng hải sản nên trang trí màu gì?
+ REF: Màu xanh để hợp tính Thủy.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chỉ giới thiệu tổng quát về phong thủy mà không đề cập cụ thể đến màu sắc trang trí cho nhà hàng hải sản. Trong
+phong thủy, màu sắc thường liên quan đến ngũ hành (như màu xanh dương hoặc đen đại diện cho Thủy để phù hợp với chủ đề hải sản), nhưng cần tham khảo thêm để áp dụng chính xác. Bạn có thể cân nhắc màu sắc mang tính Thủy hành để tạo sự hài hòa và thịnh vượng.
+ F1: 0.122 | Judge: 0.850 ({"score": 0.85, "rationale": "Trả lời đề cập màu xanh dương cho Thủy phù hợp hải sản, khớp ý tham chiếu, nhưng thêm lựa chọn đen và thể hiện không chắc chắn."})
+[32] Q: Màu đỏ thường được dùng trong kinh doanh để làm gì?
+ REF: Tượng trưng cho may mắn và tài lộc nhưng không nên dùng trong phòng nghỉ.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chủ yếu giới thiệu tổng quát về Tử Vi Đẩu Số và Phong Thủy mà không đề cập cụ thể đến vai trò của màu đỏ trong kinh doanh.
+
+Nguồn: tu-vi-dau-so-toan-thu-tran-doan.pdf, TU_VI_THUC_HANH.pdf, phong_thuy_toan_tap.pdf, fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.108 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin cụ thể về màu đỏ trong kinh doanh, trong khi tham chiếu xác nhận tượng trưng cho may mắn và tài lộc."})
+[33] Q: Mệnh Thủy nên tránh xe màu gì?
+ REF: Nên chọn xe xanh dương, đen hoặc trắng; tránh dùng đỏ thuộc Hỏa.
+ PRED: Người mệnh Thủy trong phong thủy nên tránh các màu thuộc hành Hỏa như đỏ, hồng, cam vì chúng khắc chế Thủy, có thể gây bất lợi cho vận mệnh. Ngoài ra, màu thuộc hành Thổ
+như vàng đất, nâu cũng không nên dùng vì có thể làm suy yếu năng lượng. Tuy nhiên, tôi không chắc từ tài liệu hiện có vì ngữ cảnh chỉ cung cấp giới thiệu chung về phong thủy mà không chi tiết về màu sắc cho mệnh Thủy.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.123 | Judge: 0.800 ({"score": 0.8, "rationale": "Trả lời đúng về tránh màu Hỏa (đỏ, hồng, cam) khớp tham chiếu, thêm tránh Thổ hợp lý theo phong thủy, nhưng phần không chắc chắn giảm độ tin cậy."})
+[34] Q: Mệnh Hỏa có nên chọn xe màu đỏ?
+ REF: Không nên vì Hỏa quá mạnh; có thể chọn xanh đậm hoặc đen để giảm Hỏa, hoặc chọn trắng/xám thuộc Kim.
+ PRED: Theo phong thủy, người mệnh Hỏa thường hợp với màu đỏ vì nó thuộc hành Hỏa, giúp tăng cường năng lượng tích cực và may mắn. Tuy nhiên, từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể về việc chọn màu xe cho mệnh Hỏa. Tôi không chắc từ tài liệu hiện có để đưa ra lời khuyên chính xác hơn.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.156 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời mâu thuẫn với tham chiếu bằng cách gợi ý màu đỏ hợp mệnh Hỏa, trong khi tham chiếu khuyên tránh; phần thừa nhận thiếu thông tin không bù đắp được sai lệch chính."})
+[35] Q: Mệnh Kim nên chọn màu xe nào?
+ REF: Trắng, xám, bạc, vàng và nâu.
+ PRED: Dựa trên nguyên tắc phong thủy, người mệnh Kim nên ưu tiên màu sắc tương sinh như trắng, xám, bạc hoặc màu thuộc hành Thổ (vàng, nâu) để hỗ trợ năng lượng, tránh màu thuộc hành Hỏa (đỏ, hồng) vì tương khắc.
+Tuy nhiên, từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể về màu xe cho mệnh Kim.
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.104 | Judge: 0.950 ({"score": 0.95, "rationale": "Trả lời liệt kê đúng màu sắc từ tham chiếu (trắng, xám, bạc, vàng, nâu) và giải thích chính xác nguyên tắc phong thủy, dù có phần do dự về nguồn cụ thể."})
+[36] Q: Mệnh Mộc nên chọn màu xe nào?
+ REF: Xanh lá, đen hoặc xanh dương.
+ PRED: Tôi không chắc từ tài liệu hiện có về việc chọn màu xe cụ thể cho người mệnh Mộc, vì các nguồn chủ yếu tập trung vào tử vi và phong thủy tổng quát mà không đề cập chi tiế
+t đến màu sắc phương tiện giao thông. Trong phong thủy cơ bản, mệnh Mộc thường hợp với màu xanh lá cây hoặc xanh dương để hỗ trợ năng lượng tương sinh, nhưng cần xem xét thêm lá số cá nhân. Bạn nên tham khảo chuyên gia phong thủy để có lời khuyên chính xác hơn.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.077 | Judge: 0.700 ({"score": 0.7, "rationale": "Đúng về xanh lá và xanh dương, nhưng thiếu màu đen trong tham chiếu và thể hiện sự không chắc chắn về thông tin cụ thể."})
+[37] Q: Mệnh Thổ nên chọn màu xe nào?
+ REF: Vàng, nâu, cam hoặc đỏ.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chủ yếu tập trung vào Tử Vi Đẩu Số và phong thủy tổng quát mà không đề cập cụ thể đến màu xe cho mệnh Thổ. Trong phong thủy, mệnh Thổ thường hợp với màu vàng, nâu đất để tăng cường năng lượng, nhưng cần tham khảo thêm để chính xác.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.026 | Judge: 0.600 ({"score": 0.6, "rationale": "Đúng về vàng và nâu (gần nâu đất), nhưng thiếu cam và đỏ theo tham chiếu, đồng thời thể hiện sự không chắc chắn về màu xe cụ thể."})
+[38] Q: Hướng Đông thuộc hành gì?
+ REF: Mộc.
+ PRED: Trong phong thủy, các hướng thường được liên kết với ngũ hành dựa trên nguyên lý âm dương và Bát Quái, nhưng tài liệu hiện có chỉ giới thiệu tổng quát về nguồn gốc phong
+thủy từ Trung Quốc mà không chi tiết hóa hành của từng hướng. Tôi không chắc từ tài liệu hiện có về việc hướng Đông cụ thể thuộc hành gì, vì nội dung chủ yếu tập trung vào môi trường sống và thiên thể. Bạn có thể tham khảo thêm các tài liệu chuyên sâu về ngũ hành để xác định rõ hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không xác định đúng hướng Đông thuộc hành Mộc, thay vào đó né tránh và cho rằng tài liệu không chi tiết."})
+[39] Q: Hướng Tây thuộc hành gì?
+ REF: Kim.
+ PRED: Theo kiến thức phong thủy cơ bản trong tài liệu, hướng Tây thường liên quan đến hành Kim, tượng trưng cho sự thu hoạch và kim loại, nhưng tài liệu cung cấp không chi tiết hóa rõ ràng về ngũ hành các hướng. Tôi không chắc từ tài liệu hiện có để xác nhận chính xác.
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.037 | Judge: 0.900 ({"score": 0.9, "rationale": "Trả lời xác nhận đúng hướng Tây thuộc hành Kim theo phong thủy, dù thêm sự không chắc chắn từ tài liệu không làm sai lệch nội dung chính."})
+[40] Q: Hướng Nam thuộc hành gì?
+ REF: Hỏa.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp không đề cập trực tiếp đến mối liên hệ giữa hướng Nam và ngũ hành trong phong thủy. Các tài liệu chủ yếu tập tru
+ng vào cơ bản phong thủy, tử vi đẩu số, mà không chi tiết hóa về hướng và hành tương ứng. Bạn có thể cần tham khảo thêm tài liệu chuyên sâu về ngũ hành phong thủy để có thông tin chính xác.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không đưa ra đáp án đúng (Hỏa) mà thừa nhận thiếu thông tin và né tránh, không khớp với tham chiếu."})
+[41] Q: Hướng Bắc thuộc hành gì?
+ REF: Thủy.
+ PRED: Trong phong thủy, các hướng được liên hệ với ngũ hành dựa trên nguyên lý âm dương và thiên địa, nhưng tài liệu hiện có chỉ giới thiệu cơ bản về phong thủy như một môn kho
+a học môi trường từ Trung Quốc cổ, mà không chi tiết hóa mối quan hệ cụ thể giữa hướng Bắc và hành tương ứng. Tôi không chắc từ tài liệu hiện có về việc hướng Bắc thuộc hành gì một cách chính xác. Bạn có thể cần tham khảo thêm các tài liệu chuyên sâu về Bát Quái hoặc La Bàn phong thủy để xác định rõ hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không xác nhận hướng Bắc thuộc hành Thủy như tham chiếu, mà phủ nhận kiến thức cơ bản từ phong thủy và gợi ý tham khảo thêm, dẫn đến độ chính xác bằng không."})
+[42] Q: Hướng Đông Nam thuộc hành gì?
+ REF: Mộc.
+ PRED: Trong phong thủy, các hướng được liên hệ với ngũ hành dựa trên nguyên lý cơ bản về môi trường và sự chuyển động của thiên thể, nhưng tài liệu hiện có chỉ đề cập tổng quát
+ về nguồn gốc phong thủy mà không chi tiết hóa từng hướng. Tôi không chắc từ tài liệu hiện có về việc hướng Đông Nam thuộc hành cụ thể nào. Bạn có thể tham khảo thêm các tài liệu phong thủy chuyên sâu để xác định chính xác.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.000 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không xác định hướng Đông Nam thuộc hành Mộc, mà thừa nhận không chắc chắn từ tài liệu, không khớp với tham chiếu."})
+[43] Q: Hướng Đông Bắc thuộc hành gì?
+ REF: Thổ.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chỉ giới thiệu tổng quát về phong thủy mà không chi tiết hóa ngũ hành của hướng Đông Bắc. Trong phong thủy truyền thống, hướng Đông Bắc thường liên quan đến hành Thổ, nhưng cần tham khảo tài liệu chuyên sâu hơn để xác nhận.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.036 | Judge: 0.900 ({"score": 0.9, "rationale": "Trả lời xác nhận đúng hành Thổ cho hướng Đông Bắc theo phong thủy, nhưng thể hiện sự không chắc chắn do tài liệu, làm giảm nhẹ độ chính xác tuyệt đối."})
+[44] Q: Hướng Tây Bắc thuộc hành gì?
+ REF: Kim.
+ PRED: Dựa trên các tài liệu phong thủy được cung cấp, hướng Tây Bắc thường liên quan đến hành Kim trong hệ thống ngũ hành, tượng trưng cho sự hỗ trợ và quý nhân. Tuy nhiên, thông tin chi tiết cụ thể về hướng này không được đề cập rõ ràng trong ngữ cảnh hiện có. Tôi không chắc từ tài liệu hiện có để khẳng định chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.030 | Judge: 0.800 ({"score": 0.8, "rationale": "Trả lời xác nhận đúng hướng Tây Bắc thuộc hành Kim theo phong thủy, nhưng thêm sự do dự về nguồn tài liệu làm giảm độ khẳng định."})
+[45] Q: Hướng Tây Nam thuộc hành gì?
+ REF: Thổ.
+ PRED: Dựa trên các tài liệu phong thủy cơ bản, hướng Tây Nam thường liên quan đến quẻ Khôn trong Bát Quái, thuộc hành Thổ, tượng trưng cho sự nuôi dưỡng và ổn định. Tuy nhiên, ngữ cảnh cung cấp chỉ giới thiệu tổng quát về phong thủy mà không chi tiết hóa ngũ hành các hướng cụ thể. Tôi không chắc từ tài liệu hiện có để xác nhận chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.029 | Judge: 0.900 ({"score": 0.9, "rationale": "Xác nhận đúng hướng Tây Nam thuộc hành Thổ (quẻ Khôn), nhưng phần không chắc chắn làm giảm nhẹ độ khẳng định."})
+[46] Q: Nhà hướng Đông Nam hợp mệnh nào?
+ REF: Đông Nam thuộc Mộc nên hợp mệnh Mộc và mệnh Hỏa.
+ PRED: Dựa trên các tài liệu phong thủy cơ bản, hướng Đông Nam thường liên quan đến hành Mộc, phù hợp với mệnh Mộc và Hỏa, vì hướng này nhận được năng lượng tích cực từ mặt trời
+ mọc, hỗ trợ sự phát triển và thịnh vượng. Tuy nhiên, sự hợp mệnh còn phụ thuộc vào bản mệnh cá nhân và vị trí cụ thể của ngôi nhà. Tôi không chắc từ tài liệu hiện có về chi tiết chính xác hơn cho trường hợp này.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.188 | Judge: 1.000 ({"score":1.0,"rationale":"Trả lời khớp chính xác với tham chiếu: Đông Nam thuộc Mộc, hợp mệnh Mộc và Hỏa; phần bổ sung không làm sai lệch."})
+[47] Q: Nhà hướng Tây Bắc hợp mệnh nào?
+ REF: Tây Bắc thuộc Kim nên hợp mệnh Kim và mệnh Thổ.
+ PRED: Trong phong thủy, hướng Tây Bắc thường liên quan đến hành Kim và quái Càn, phù hợp với những người mệnh Kim hoặc thuộc nhóm Tây Tứ Trạch (như quái Càn, Đoài, Khôn, Cấn).
+Tuy nhiên, để xác định chính xác hợp mệnh cá nhân, cần xem xét năm sinh và bản mệnh cụ thể theo Bát Trạch. Tôi không chắc từ tài liệu hiện có về chi tiết đầy đủ cho trường hợp này.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.179 | Judge: 0.750 ({"score": 0.75, "rationale": "Đúng về hành Kim và hợp mệnh Kim, gián tiếp đề cập Thổ qua Tây Tứ Trạch, nhưng thiếu trực tiếp mệnh Thổ và có sự không chắc chắn không khớp tham chiếu."})
+[48] Q: Nhà hướng Đông Bắc hợp mệnh nào?
+ REF: Đông Bắc thuộc Thổ nên hợp mệnh Thổ và mệnh Kim.
+ PRED: Theo phong thủy, hướng Đông Bắc thuộc quẻ Cấn, thường hợp với những người mệnh Thổ hoặc có cung mệnh tương sinh với Thổ (như Hỏa sinh Thổ). Tuy nhiên, việc xác định chính xác cần dựa vào năm sinh và cung mệnh cá nhân theo Bát Trạch. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.212 | Judge: 0.700 ({"score": 0.7, "rationale": "Đúng về hướng Đông Bắc thuộc Thổ và hợp mệnh Thổ, nhưng thay vì mệnh Kim theo tham chiếu thì đề cập Hỏa sinh Thổ, và thêm yếu tố không chắc chắn làm giảm độ chính xác trực tiếp."})
+[49] Q: Nhà hướng Tây Nam hợp mệnh nào?
+ REF: Tây Nam thuộc Thổ nên hợp mệnh Thổ và mệnh Kim.
+ PRED: Theo phong thủy cơ bản, hướng Tây Nam thuộc quẻ Khôn, đại diện cho hành Thổ, thường được coi là hướng mang năng lượng ổn định và nuôi dưỡng. Tuy nhiên, sự hợp mệnh phụ th
+uộc vào quái mệnh cá nhân của gia chủ theo Bát Trạch, nơi hướng này có thể là Sinh Khí hoặc Thiên Y cho một số mệnh như Thổ hoặc Hỏa. Tôi không chắc chắn chi tiết cụ thể từ tài liệu hiện có, vì chúng chỉ giới thiệu tổng quát về phong thủy mà không đề cập trực tiếp đến hướng Tây Nam.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.146 | Judge: 0.600 ({"score": 0.6, "rationale": "Đúng về hướng Tây Nam thuộc hành Thổ, nhưng sai về mệnh hợp (đề cập Thổ/Hỏa thay vì Thổ/Kim) và thêm yếu tố không chắc chắn làm giảm độ chính xác."})
+[50] Q: Nhà hướng Đông hợp mệnh nào?
+ REF: Đông thuộc Mộc nên hợp mệnh Mộc và mệnh Hỏa.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chủ yếu giới thiệu tổng quát về phong thủy và tử vi mà không đề cập cụ thể đến sự hợp mệnh của nhà hướng Đông. T
+rong phong thủy truyền thống, hướng Đông thường thuộc Đông Tứ Trạch, phù hợp với các mệnh thuộc Đông Tứ Mệnh (như Chấn, Tốn), nhưng cần xem xét lá số cá nhân để xác định chính xác. Bạn nên tham khảo thêm sách chuyên sâu về Bát Trạch phong thủy.
+ F1: 0.150 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời tập trung vào Bát Trạch (Đông Tứ Trạch, Chấn-Tốn) thay vì Ngũ Hành (Mộc hợp Mộc-Hỏa) như tham chiếu, và thừa nhận không chắc chắn, không khớp trực tiếp."})
+[51] Q: Nhà hướng Tây hợp mệnh nào?
+ REF: Tây thuộc Kim nên hợp mệnh Kim và mệnh Thổ.
+ PRED: Dựa trên ngữ cảnh cung cấp, tài liệu chủ yếu giới thiệu cơ bản về phong thủy như nguồn gốc và mục đích, nhưng không đề cập cụ thể đến việc nhà hướng Tây hợp với mệnh nào
+trong ngũ hành. Trong phong thủy, hướng nhà thường liên quan đến bát quái và bản mệnh cá nhân, nhưng tôi không tìm thấy thông tin chi tiết từ các nguồn này. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.105 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không khớp với tham chiếu, né tránh cung cấp thông tin đúng về hướng Tây hợp mệnh Kim và Thổ."})
+[52] Q: Nhà hướng Nam hợp mệnh nào?
+ REF: Nam thuộc Hỏa nên hợp mệnh Hỏa và mệnh Mộc.
+ PRED: Theo phong thủy, nhà hướng Nam thuộc quái Ly (hành Hỏa), nên hợp với người mệnh Hỏa (tương hợp) và mệnh Mộc (tương sinh), giúp mang lại năng lượng tích cực, thịnh vượng và sức khỏe. Người mệnh Kim hoặc Thổ nên cân nhắc thêm các biện pháp hóa giải nếu chọn hướng này, vì có thể xung khắc. Tránh nếu mệnh Thủy, vì Hỏa khắc Thủy.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.208 | Judge: 0.800 ({"score": 0.8, "rationale": "Phần cốt lõi khớp tham chiếu (hợp Hỏa và Mộc), nhưng sai khi cho rằng hướng Nam xung khắc với mệnh Thổ (thực tế Hỏa sinh Thổ, nên tốt)."})
+[53] Q: Nhà hướng Bắc hợp mệnh nào?
+ REF: Bắc thuộc Thủy nên hợp mệnh Thủy và mệnh Kim.
+ PRED: Từ tài liệu hiện có, không có thông tin cụ thể về việc nhà hướng Bắc hợp với mệnh nào trong phong thủy. Các nguồn chủ yếu giới thiệu tổng quát về phong thủy và tử vi mà không đi sâu vào phân tích hướng nhà theo ngũ hành hoặc bát trạch. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.131 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin cụ thể về hướng Bắc hợp mệnh Thủy và Kim theo tham chiếu, dẫn đến độ chính xác bằng 0."})
+[54] Q: Bộ Tam hợp Dần–Ngọ–Tuất hoá gì?
+ REF: Hóa Hỏa (Hỏa).
+ PRED: Bộ Tam hợp Dần–Ngọ–Tuất trong hệ thống Tử Vi Đẩu Số và phong thủy thường liên quan đến ngũ hành Hỏa, tượng trưng cho sự biến hóa và năng lượng dương. Tuy nhiên, từ các tà
+i liệu hiện có, không có chi tiết cụ thể về sự "hóa" của bộ này, có thể cần tham khảo thêm các luận giải sâu về sao và cục. Tôi không chắc từ tài liệu hiện có về ý nghĩa chính xác.
+
+Nguồn: tu-vi-dau-so-toan-thu-tran-doan.pdf, TU_VI_THUC_HANH.pdf, phong_thuy_toan_tap.pdf.
+ F1: 0.024 | Judge: 0.700 ({"score": 0.7, "rationale": "Câu trả lời đúng về liên quan ngũ hành Hỏa nhưng không khẳng định rõ 'Hóa Hỏa' và thể hiện sự không chắc chắn, thiếu độ chính xác trực tiếp so với tham chiếu."})
+[55] Q: Bộ Tam hợp Thân–Tý–Thìn hoá gì?
+ REF: Hóa Thủy.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chỉ giới thiệu tổng quát về Tử Vi Đẩu Số và phong thủy mà không đề cập chi tiết đến bộ tam hợp Thân–Tý–Thìn. Trong Tử Vi, tam hợp này thường thuộc Thủy cục, nhưng cần tài liệu chuyên sâu hơn để xác định chính xác "hoá gì". Bạn có thể cung cấp thêm ngữ cảnh để tôi hỗ trợ tốt hơn.
+
+Nguồn: TU_VI_THUC_HANH.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf
+ F1: 0.025 | Judge: 0.800 ({"score": 0.8, "rationale": "Trả lời nhận diện đúng tam hợp Thân-Tý-Thìn thuộc Thủy cục (tương đương Hóa Thủy), nhưng thể hiện sự không chắc chắn và không khẳng định trực tiếp."})
+[56] Q: Bộ Tam hợp Tỵ–Dậu–Sửu hoá gì?
+ REF: Hóa Kim.
+ PRED: Bộ Tam hợp Tỵ–Dậu–Sửu thuộc về hệ thống Tử Vi Đẩu Số và ngũ hành, thường liên quan đến Kim cục trong các tam hợp địa chi. Tuy nhiên, từ tài liệu hiện có, không có thông tin chi tiết cụ thể về việc "hóa" của bộ này. Tôi không chắc từ tài liệu hiện có để trả lời chính xác hơn.
+
+Nguồn: TU_VI_THUC_HANH.pdf, tu-vi-dau-so-toan-thu-tran-doan.pdf
+ F1: 0.029 | Judge: 0.400 ({"score": 0.4, "rationale": "Trả lời nhận diện liên quan đến Kim cục nhưng không khẳng định trực tiếp 'Hóa Kim' theo tham chiếu, thay vào đó thừa nhận thiếu thông tin và không chắc chắn."})
+[57] Q: Bộ Tam hợp Hợi–Mão–Mùi hoá gì?
+ REF: Hóa Mộc.
+ PRED: Bộ Tam hợp Hợi–Mão–Mùi thuộc hành Mộc trong hệ thống ngũ hành và tam hợp địa chi, thường liên quan đến các yếu tố phong thủy và tử vi để luận giải vận mệnh hoặc hướng nhà. Tuy nhiên, từ các tài liệu cung cấp, không có thông tin cụ thể chi tiết về sự "hóa" của bộ tam hợp này. Tôi không chắc từ tài liệu hiện có để đưa ra giải thích sâu hơn.
+
+Nguồn: Không sử dụng nguồn cụ thể (ngữ cảnh [1], [2], [3], [4] không đề cập trực tiếp).
+ F1: 0.025 | Judge: 0.500 ({"score": 0.5, "rationale": "Câu trả lời đúng về thuộc hành Mộc nhưng sai khi phủ nhận thông tin về 'hóa Mộc' so với tham chiếu."})
+[58] Q: Nhà vệ sinh nên tránh đặt ở những hướng nào?
+ REF: Không nên đặt ở phía Bắc, Đông Bắc hoặc Tây Nam của tòa nhà.
+ PRED: Tôi không chắc từ tài liệu hiện có về các hướng cụ thể cần tránh đặt nhà vệ sinh trong phong thủy.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.082 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác khớp với tham chiếu, chỉ thừa nhận không chắc chắn."})
+[59] Q: Nhà vệ sinh có nên đặt gần cửa chính không?
+ REF: Không; nhà vệ sinh không nên đặt gần cửa chính.
+ PRED: Theo phong thủy, việc đặt nhà vệ sinh gần cửa chính không được khuyến khích vì có thể gây ảnh hưởng tiêu cực đến dòng chảy năng lượng (khí) vào nhà, dẫn đến ô nhiễm và giảm sự thịnh vượng. Nên tránh vị trí này để giữ sự cân bằng âm dương trong không gian sống. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể hơn.
+
+Nguồn: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.188 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời chính xác khớp với tham chiếu: không nên đặt nhà vệ sinh gần cửa chính theo phong thủy."})
+[60] Q: Cửa nhà vệ sinh có nên đối diện cửa phòng ngủ hoặc bếp không?
+ REF: Không; cửa nhà vệ sinh không nên đối diện cửa phòng ngủ hoặc bếp.
+ PRED: Theo phong thủy cơ bản, việc bố trí nhà cửa cần tránh các yếu tố gây mất cân bằng năng lượng, nhưng tài liệu hiện có chỉ giới thiệu tổng quát về phong thủy mà không đề cậ
+p cụ thể đến vị trí cửa nhà vệ sinh đối diện phòng ngủ hoặc bếp. Tôi không chắc từ tài liệu hiện có về khuyến nghị chính xác cho trường hợp này, nên bạn có thể tham khảo thêm các nguyên tắc thực hành chi tiết. Để đảm bảo, hãy cân nhắc tư vấn chuyên gia phong thủy dựa trên bản vẽ nhà cụ thể.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.218 | Judge: 0.300 ({"score": 0.3, "rationale": "Trả lời né tránh khẳng định rõ ràng 'không nên' theo tham chiếu, chỉ đề cập tổng quát và thừa nhận không chắc chắn từ tài liệu, dù phong thủy chuẩn khuyên tránh."})
+[61] Q: Sàn nhà vệ sinh có nên cao hơn sàn phòng khác không?
+ REF: Không; sàn nhà vệ sinh không nên cao hơn các phòng khác.
+ PRED: Trong phong thủy, việc thiết kế sàn nhà vệ sinh thường cần tuân thủ nguyên tắc về dòng chảy năng lượng và tránh tích tụ khí xấu, nhưng tài liệu hiện có không đề cập cụ th
+ể đến việc sàn nhà vệ sinh có nên cao hơn sàn phòng khác hay không. Tôi không chắc từ tài liệu hiện có, vì các nguồn chỉ tập trung vào giới thiệu cơ bản về phong thủy và các khía cạnh khác như tử vi. Bạn có thể tham khảo thêm các tài liệu chuyên sâu về kiến trúc phong thủy để có lời khuyên chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.237 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không khẳng định rõ ràng 'Không' như tham chiếu, mà né tránh và thừa nhận không chắc chắn từ tài liệu."})
+[62] Q: Nhà vệ sinh nên đặt gần phòng ngủ hay xa?
+ REF: Có thể gần phòng ngủ nhưng không đối diện và không quá gần cửa chính.
+ PRED: Trong phong thủy, vị trí nhà vệ sinh cần được xem xét cẩn thận để tránh ảnh hưởng đến dòng chảy năng lượng (khí), nhưng tài liệu hiện có không cung cấp chi tiết cụ thể về
+ việc đặt gần hay xa phòng ngủ. Tôi không chắc từ tài liệu hiện có, vì các nguồn chỉ đề cập tổng quát về phong thủy trong xây dựng nhà ở mà không đi sâu vào vấn đề này. Bạn nên tham khảo thêm chuyên gia phong thủy để có lời khuyên phù hợp với bản thiết kế cụ thể.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.112 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác theo tham chiếu (có thể gần nhưng không đối diện và không quá gần cửa chính), thay vào đó phủ nhận chi tiết cụ thể từ tài liệu."})
+[63] Q: Bếp nên đặt ở những hướng nào theo phong thủy?
+ REF: Nên đặt ở hướng Đông hoặc Đông Nam để hợp với hành Hỏa.
+ PRED: Theo phong thủy cơ bản, vị trí bếp cần được xem xét để hài hòa với dòng chảy năng lượng, nhưng tài liệu hiện có chỉ giới thiệu chung về nguồn gốc và ý nghĩa của phong thủ
+y mà không chi tiết cụ thể về hướng đặt bếp. Tôi không chắc từ tài liệu hiện có về các hướng chính xác cho bếp, vì nội dung chủ yếu tập trung vào lịch sử và nguyên tắc tổng quát. Bạn nên tham khảo thêm các nguồn chuyên sâu về phong thủy nhà ở để có lời khuyên phù hợp.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.126 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không đề cập đến hướng Đông hoặc Đông Nam theo tham chiếu, mà né tránh và thừa nhận thiếu thông tin cụ thể."})
+[64] Q: Bếp có nên đặt ở lối vào nhà không?
+ REF: Không; bếp không nên đặt ngay lối vào.
+ PRED: Theo phong thủy, việc đặt bếp ở lối vào nhà thường không được khuyến khích vì lối vào là nơi đón nhận năng lượng tốt (khí), và bếp có thể tạo ra sự xung đột về hỏa khí, ảnh hưởng đến sự hài hòa tổng thể. Tuy nhiên, từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể chi tiết về vấn đề này. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.122 | Judge: 0.600 ({"score": 0.6, "rationale": "Phần đầu đồng ý với tham chiếu (không nên đặt), nhưng phần sau phủ nhận thông tin cụ thể từ tài liệu, tạo mâu thuẫn và giảm độ chính xác."})
+[65] Q: Bếp có nên đặt giữa hai phòng ngủ không?
+ REF: Không; bếp không nên đặt giữa hai phòng ngủ.
+ PRED: Theo phong thủy, việc đặt bếp giữa hai phòng ngủ không được khuyến khích vì có thể tạo ra xung sát từ hỏa khí của bếp ảnh hưởng đến sự nghỉ ngơi và sức khỏe của người ở h
+ai phòng. Nên tránh vị trí này để đảm bảo dòng năng lượng hài hòa, ưu tiên bếp đặt ở hướng Đông Nam hoặc các khu vực thông thoáng, cách xa phòng ngủ. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.146 | Judge: 0.950 ({"score": 0.95, "rationale": "Trả lời đồng ý chính xác với tham chiếu rằng không nên đặt bếp giữa hai phòng ngủ, giải thích lý do phù hợp phong thủy; phần 'không chắc' hơi giảm độ tin cậy nhưng không sai nội dung."})
+[66] Q: Cửa bếp có nên đối diện phòng ngủ hoặc phòng tắm không?
+ REF: Không; cửa bếp không nên đối diện phòng ngủ hoặc phòng tắm.
+ PRED: Theo phong thủy cơ bản, cửa bếp không nên đối diện trực tiếp với phòng ngủ vì có thể gây xung đột giữa hỏa khí (bếp) và âm khí (phòng ngủ), ảnh hưởng đến sức khỏe và giấc
+ ngủ. Tương tự, tránh đối diện phòng tắm để ngăn chặn sự xâm nhập của khí ô uế từ nước thải vào khu vực nấu nướng. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể hơn cho trường hợp này.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.191 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời chính xác khớp tham chiếu, khẳng định không nên đối diện và giải thích lý do phong thủy phù hợp."})
+[67] Q: Bếp có nên có hình dạng tròn hoặc bán nguyệt không?
+ REF: Không; bếp nên tránh hình bán nguyệt hoặc tròn.
+ PRED: Từ các tài liệu phong thủy cơ bản, không có đề cập cụ thể về việc bếp nên có hình dạng tròn hoặc bán nguyệt, vì phong thủy tập trung vào sự hài hòa tổng thể của môi trườn
+g sống và dòng chảy năng lượng. Hình dạng tròn thường tượng trưng cho sự đoàn tụ và may mắn trong một số nguyên tắc phong thủy truyền thống, nhưng cần xem xét vị trí và hướng bếp để tránh xung khắc. Tôi không chắc từ tài liệu hiện có về khuyến nghị chính xác cho hình dạng này.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.160 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời không khớp tham chiếu vì không khẳng định rõ 'nên tránh' hình tròn/bán nguyệt, mà mơ hồ và gợi ý hình tròn có thể mang may mắn."})
+[68] Q: Vị trí vòi nước so với bếp nên như thế nào?
+ REF: Vòi nước không nên nằm ở hai bên bếp; có thể đặt giữa hai bếp hoặc một bên.
+ PRED: Tôi không chắc từ tài liệu hiện có về vị trí cụ thể của vòi nước so với bếp trong phong thủy, vì các nguồn chỉ đề cập tổng quát về nguyên tắc môi trường sống và kiến trúc nhà ở mà không chi tiết hóa vấn đề này.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.160 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận có thông tin chi tiết cụ thể, không khớp với tham chiếu cung cấp vị trí rõ ràng."})
+[69] Q: Sàn bếp nên cao hay thấp so với các phòng khác?
+ REF: Sàn bếp nên bằng hoặc thấp hơn các phòng khác; không nên cao hơn.
+ PRED: Tôi không chắc từ tài liệu hiện có về việc sàn bếp nên cao hay thấp so với các phòng khác trong phong thủy. Các tài liệu cung cấp chỉ giới thiệu cơ bản về phong thủy và thực hành xây dựng, nhưng không đề cập cụ thể đến vấn đề này. Bạn có thể cần tham khảo thêm nguồn chuyên sâu về kiến trúc phong thủy nhà ở.
+ F1: 0.232 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác theo tham chiếu (sàn bếp nên bằng hoặc thấp hơn), mà thừa nhận không biết và gợi ý tham khảo thêm."})
+[70] Q: Bếp nên được đặt ở phần nào của nhà?
+ REF: Nên đặt ở phía sau của ngôi nhà, tách biệt với phòng khách.
+ PRED: Tôi không chắc từ tài liệu hiện có về vị trí cụ thể đặt bếp trong nhà theo phong thủy, vì các tài liệu chỉ giới thiệu cơ bản về phong thủy và nguồn gốc của nó mà không đề cập chi tiết đến khu vực bếp. Bạn có thể cần tham khảo thêm các sách chuyên sâu về phong thủy nhà ở để có hướng dẫn chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.098 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác về vị trí bếp theo tham chiếu, mà thừa nhận thiếu dữ liệu và không đề cập đến việc đặt ở phía sau tách biệt phòng khách."})
+[71] Q: Nên dùng màu gì cho không gian bếp?
+ REF: Nên dùng màu sáng, tránh quá tối để phù hợp với tính Hỏa.
+ PRED: Dựa trên các tài liệu phong thủy hiện có, không có thông tin cụ thể về màu sắc phù hợp cho không gian bếp. Phong thủy nhấn mạnh vào sự hài hòa với môi trường sống, nhưng chi tiết về màu cho bếp cần tham khảo thêm các nguyên tắc ngũ hành. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.123 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin cụ thể về màu sắc cho bếp, mâu thuẫn trực tiếp với tham chiếu cung cấp lời khuyên rõ ràng về màu sáng phù hợp với tính Hỏa."})
+[72] Q: Khi bếp màu đỏ hướng Nam quá nhiều Hỏa, nên dùng vật liệu hoặc màu sắc gì để giảm?
+ REF: Có thể thêm yếu tố Thổ như lát đá hoặc đặt nồi đất, hoặc dùng tranh nước và màu xanh (Thủy) để giảm bớt Hỏa.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn chủ yếu tập trung vào Tử Vi Đẩu Số và không cung cấp chi tiết cụ thể về phong thủy bếp, màu sắc giảm Hỏa ở hướng Nam.
+
+Nguồn: Không sử dụng nguồn cụ thể do thiếu thông tin liên quan.
+ F1: 0.167 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp bất kỳ thông tin nào về vật liệu hoặc màu sắc giảm Hỏa, chỉ thừa nhận thiếu kiến thức, không khớp với tham chiếu."})
+[73] Q: Có nên đặt cây cảnh trong bếp không?
+ REF: Không; cây thuộc hành Mộc sẽ sinh Hỏa, làm Hỏa mạnh thêm.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn không đề cập cụ thể đến việc đặt cây cảnh trong bếp theo nguyên tắc phong thủy. Phong thủy nhấn mạnh sự hài hòa giữa các
+yếu tố, nhưng cần thêm thông tin chi tiết về vị trí và loại cây để tư vấn chính xác. Bạn có thể tham khảo thêm các tài liệu chuyên sâu về phong thủy nhà bếp để tránh ảnh hưởng đến dòng chảy năng lượng.
+
+(Nguồn: Không sử dụng nguồn cụ thể do thiếu thông tin liên quan.)
+ F1: 0.094 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời né tránh câu trả lời trực tiếp 'Không' theo tham chiếu, thiếu lý do chính xác về Mộc sinh Hỏa làm mạnh Hỏa trong bếp, chỉ chung chung về hài hòa và thiếu thông tin."})
+[74] Q: Vì sao cần cân bằng Hỏa và Thủy trong bếp?
+ REF: Bếp lò tượng trưng cho Hỏa và nước sinh hoạt tượng trưng cho Thủy; hai hành này xung khắc nên cần cân bằng để tránh xung đột năng lượng.
+ PRED: Tôi không chắc từ tài liệu hiện có về lý do cụ thể cần cân bằng Hỏa và Thủy trong bếp, vì các nội dung chủ yếu giới thiệu phong thủy cơ bản và nguồn gốc từ Trung Quốc xưa
+, tập trung vào môi trường sống và canh tác. Chúng không đề cập chi tiết đến ngũ hành Hỏa (liên quan lửa nấu nướng) và Thủy (nước, bồn rửa) trong không gian bếp. Bạn nên tham khảo thêm sách phong thủy nhà ở chuyên sâu để hiểu rõ hơn về sự hài hòa âm dương ngũ hành nhằm tránh xung khắc năng lượng.
+ F1: 0.265 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không đề cập hoặc giải thích đúng lý do xung khắc Hỏa-Thủy theo tham chiếu, mà né tránh và thừa nhận thiếu thông tin."})
+[75] Q: Bãi đỗ xe trong nhà nên tránh đặt ở hướng nào?
+ REF: Nên tránh đặt bãi đỗ xe ở hướng Bắc.
+ PRED: Tôi không chắc từ tài liệu hiện có về hướng cụ thể cần tránh cho bãi đỗ xe trong nhà, vì các nguồn chỉ đề cập tổng quát đến phong thủy môi trường sống và xây dựng nhà ở mà không chi tiết hóa vấn đề này. Bạn có thể cần tham khảo thêm tài liệu chuyên sâu về phong thủy kiến trúc để xác định hướng phù hợp dựa trên mệnh gia chủ.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.141 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không đề cập hướng Bắc cần tránh, thay vào đó phủ nhận thông tin cụ thể từ nguồn, không khớp với tham chiếu."})
+[76] Q: Khu vực ăn uống nên hướng về phía nào?
+ REF: Nên quay về hướng Nam hoặc Tây Nam.
+ PRED: Trong phong thủy, hướng của khu vực ăn uống thường được khuyến nghị dựa trên nguyên tắc cân bằng năng lượng khí, nhưng tài liệu hiện có không cung cấp chi tiết cụ thể về
+hướng lý tưởng cho khu vực này. Tôi không chắc từ tài liệu hiện có về hướng chính xác, vì các nội dung chủ yếu giới thiệu tổng quát về phong thủy và không đề cập trực tiếp đến vị trí ăn uống. Bạn có thể tham khảo thêm sách chuyên sâu về phong thủy nhà ở để xác định dựa trên bản mệnh gia chủ.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.041 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không đề cập hoặc xác nhận hướng Nam/Tây Nam theo tham chiếu, mà phủ nhận có thông tin cụ thể."})
+[77] Q: Có nên đặt cầu thang ở giữa nhà không?
+ REF: Không; cầu thang không nên đặt ở giữa nhà.
+ PRED: Theo phong thủy, việc đặt cầu thang ở giữa nhà thường không được khuyến khích vì có thể làm chia cắt dòng khí, gây mất cân bằng năng lượng trong không gian sống. Thay vào đó, nên đặt cầu thang ở vị trí lệch trung tâm để duy trì sự hài hòa. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể hơn.
+
+Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.195 | Judge: 0.950 ({"score": 0.95, "rationale": "Trả lời chính xác đồng ý với tham chiếu rằng không nên đặt cầu thang ở giữa nhà, giải thích lý do phong thủy phù hợp, chỉ có chút không chắc chắn ở phần cuối không ảnh hưởng lớn."})
+[78] Q: Cầu thang có nên đối diện cửa chính không?
+ REF: Không; miệng cầu thang không nên hướng thẳng ra cửa chính.
+ PRED: Theo phong thủy, việc cầu thang đối diện trực tiếp với cửa chính thường không được khuyến khích vì có thể làm khí tốt thoát ra ngoài nhanh chóng, ảnh hưởng đến sự thịnh vượng của gia đình. Tuy nhiên, từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể chi tiết về vấn đề này. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.143 | Judge: 0.700 ({"score": 0.7, "rationale": "Phần kiến thức phong thủy khớp với tham chiếu (không nên đối diện), nhưng phần thừa nhận không tìm thấy thông tin cụ thể và không chắc chắn làm giảm độ chính xác tổng thể."})
+[79] Q: Cầu thang nên tránh hướng nào?
+ REF: Cầu thang nên tránh hướng Tây Bắc.
+ PRED: Trong phong thủy, việc định hướng cầu thang cần tránh các hướng có thể gây xung đột với dòng chảy năng lượng khí, chẳng hạn như hướng Tây Bắc để ngăn chặn sự mất mát tài
+lộc, dựa trên nguyên tắc cơ bản về môi trường sống. Tuy nhiên, hướng cụ thể còn phụ thuộc vào bản mệnh gia chủ và bố cục tổng thể ngôi nhà. Tôi không chắc từ tài liệu hiện có về chi tiết chính xác hơn cho mọi trường hợp.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.103 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời xác nhận chính xác cầu thang nên tránh hướng Tây Bắc theo tham chiếu, với giải thích phù hợp và lưu ý hợp lý về các yếu tố phụ."})
+[80] Q: Nếu phòng có hai cửa, chúng nên mở theo hướng nào?
+ REF: Hai cửa trong cùng một phòng nên mở cùng một hướng.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn cung cấp chỉ giới thiệu tổng quát về phong thủy mà không đề cập cụ thể đến hướng mở cửa cho phòng có hai cửa.
+
+Nguồn: phong_thuy_toan_tap.pdf, TU_VI_THUC_HANH.pdf
+ F1: 0.157 | Judge: 0.000 ({"score": 0.0, "rationale": "Câu trả lời không cung cấp thông tin chính xác theo tham chiếu (hai cửa nên mở cùng hướng), mà phủ nhận dựa trên tài liệu."})
+[81] Q: Trần nhà có nên sơn cùng màu với tường không?
+ REF: Không; trần và tường không nên sơn cùng màu.
+ PRED: Theo phong thủy, trần nhà không nên sơn cùng màu với tường nếu màu đó quá tối, vì trần cần màu sáng (như trắng hoặc pastel) để tạo cảm giác cao ráo, thông thoáng và thu hút năng lượng dương. Việc cùng màu có thể làm không gian bị "nặng nề", ảnh hưởng đến dòng chảy khí. Tốt nhất là chọn màu trần nhạt hơn tường để cân bằng âm dương trong nhà.
+
+Nguồn: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf, phong_thuy_toan_tap.pdf
+ F1: 0.190 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời trực tiếp đồng ý với tham chiếu rằng không nên sơn cùng màu, và cung cấp lý do phong thủy phù hợp."})
+[82] Q: Nhà diện tích nhỏ (dưới 100 m2) có nên làm cửa vòm không?
+ REF: Không; nhà nhỏ không nên làm cửa vòm.
+ PRED: Trong phong thủy, cửa vòm thường được coi là hình thức mềm mại, giúp lưu thông khí tốt hơn so với cửa vuông góc, nhưng không có khuyến nghị cụ thể cho nhà diện tích nhỏ d
+ưới 100 m² từ tài liệu hiện có. Đối với không gian hạn chế, việc thiết kế cửa cần ưu tiên sự cân bằng âm dương và tránh làm chật hẹp thêm, nhưng tôi không chắc chắn về việc có nên áp dụng cửa vòm hay không mà không có thêm chi tiết từ nguồn. Bạn nên tham khảo thêm ý kiến chuyên gia phong thủy thực tế để phù hợp với hướng nhà và mệnh gia chủ.
+
+Nguồn: Không sử dụng nguồn cụ thể từ ngữ cảnh do thiếu thông tin liên quan.
+ F1: 0.148 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời trung lập, không xác nhận rõ ràng 'không nên' như tham chiếu, chỉ đề cập gián tiếp đến không gian hạn chế mà không đưa ra khuyến nghị phủ định."})
+[83] Q: Có nên làm sàn nhà nhiều cấp trong một phòng không?
+ REF: Không; không nên làm sàn nhà nhiều cao thấp trong cùng một phòng.
+ PRED: Trong phong thủy, việc thiết kế sàn nhà nhiều cấp trong một phòng có thể gây ảnh hưởng đến dòng chảy năng lượng khí (khí), dẫn đến sự phân tán hoặc tắc nghẽn, làm giảm sự
+ hài hòa và ổn định của không gian sống. Theo nguyên tắc cơ bản, phong thủy khuyến khích mặt sàn bằng phẳng để khí lưu thông tự do, tránh tạo ra sự chênh lệch cấp độ không cần t
+hiết trừ khi có lý do địa hình đặc biệt. Tôi không chắc chắn từ tài liệu hiện có về các trường hợp cụ thể, nên khuyên nên tham khảo thêm chuyên gia để đánh giá hướng nhà và mệnh gia chủ.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.161 | Judge: 0.950 ({"score": 0.95, "rationale": "Trả lời đồng ý với tham chiếu rằng không nên làm sàn nhiều cấp, giải thích đúng theo phong thủy, nhưng phần 'không chắc chắn' và ngoại lệ địa hình làm giảm nhẹ độ chính xác tuyệt đối."})
+[84] Q: Cửa cổng bên trái có nên mở sang bên phải không?
+ REF: Không; cánh cổng bên trái mở sang phải thuộc thế 'tả hữu đối ngẫu', không tốt.
+ PRED: Tôi không chắc từ tài liệu hiện có về việc cửa cổng bên trái có nên mở sang bên phải không, vì các tài liệu chỉ giới thiệu tổng quát về phong thủy cơ bản và thực hành tro
+ng xây dựng nhà ở mà không đề cập cụ thể đến quy tắc này. Trong phong thủy, hướng mở cửa thường cần xem xét theo nguyên tắc âm dương và hướng nhà để tránh xung sát, nhưng cần phân tích bản đồ cụ thể. Bạn nên tham khảo thêm sách chi tiết về phong thủy kiến trúc để có lời khuyên chính xác.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.131 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không xác nhận trực tiếp 'Không' theo tham chiếu, mà né tránh và cho rằng tài liệu không đề cập, dẫn đến sai lệch hoàn toàn."})
+[85] Q: Tường dẫn từ cổng vào nhà nên xây thế nào?
+ REF: Nên xây phẳng, không lồi lõm, để khí vào nhà trơn tru.
+ PRED: Trong phong thủy, tường dẫn từ cổng vào nhà (hay còn gọi là tường rào lối vào) cần được xây dựng thẳng tắp, không uốn lượn để tránh làm phân tán dòng khí tốt (khí dương)
+từ cổng chính. Nên tránh xây tường quá cao hoặc kín mít, nhằm giữ sự thông thoáng và hài hòa với môi trường xung quanh, giúp khí lưu thông dễ dàng vào nhà. Nếu tường quá thấp, có thể dùng cây xanh hoặc hàng rào bổ trợ để tạo sự bảo vệ mà không cản trở sinh khí.
+
+Nguồn: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.141 | Judge: 0.950 ({"score": 0.95, "rationale": "Trả lời khớp chính với tham chiếu về xây phẳng/thẳng tắp, không lồi lõm/uốn lượn để khí lưu thông trơn tru; phần bổ sung về chiều cao và thông thoáng là đúng phong thủy nhưng không nằm trong tham chiếu."})
+[86] Q: Có nên trồng cây cao hai bên lối vào nhà không?
+ REF: Không; cây cao hai bên lối vào gây cảm giác bị trấn áp.
+ PRED: Theo phong thủy, lối vào nhà là nơi đón nhận khí tốt, nên cần giữ sự thông thoáng và hài hòa để dòng năng lượng lưu thông thuận lợi. Tuy nhiên, từ tài liệu hiện có, không
+ có thông tin cụ thể về việc trồng cây cao hai bên lối vào, vì vậy tôi không chắc chắn có nên làm hay không mà không xem xét hướng nhà và vị trí cụ thể. Bạn nên tham khảo thêm ý kiến chuyên gia để tránh cản trở dòng khí.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.122 | Judge: 0.300 ({"score": 0.3, "rationale": "Trả lời không khẳng định rõ 'Không' như tham chiếu, thiếu lý do cụ thể 'gây cảm giác bị trấn áp', chỉ trung lập và do dự."})
+[87] Q: Nếu trong phòng đã dùng mây tre, có nên thêm đồ gỗ hoặc kim loại không?
+ REF: Không; không nên pha trộn vật liệu khác như gỗ hoặc kim loại với mây tre vì chúng lưỡng loại khắc kỵ.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các nguồn không đề cập cụ thể đến việc kết hợp mây tre (thuộc hành Mộc) với đồ gỗ (cũng Mộc, có thể hỗ trợ) hoặc kim loại (hành Kim, có thể xung khắc) trong phòng. Theo nguyên tắc phong thủy cơ bản, cần xem xét ngũ hành của không gian để tránh xung đột, nhưng nên tham khảo thêm chuyên gia.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.276 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời do dự, không khẳng định 'Không' như tham chiếu; sai lầm khi coi gỗ (Mộc) hỗ trợ mây tre thay vì khắc kỵ, chỉ đúng phần kim loại có thể xung khắc."})
+[88] Q: Khi vá tường, nên khoét lại mảng hỏng theo hình gì?
+ REF: Nên khoét và vá theo hình vuông để tránh hình thù quái dị.
+ PRED: Tôi không chắc từ tài liệu hiện có về hình dạng cụ thể nên khoét mảng hỏng khi vá tường theo phong thủy, vì các nguồn chỉ đề cập tổng quát đến nguyên tắc môi trường sống
+mà không chi tiết hóa vấn đề này. Trong phong thủy, việc sửa chữa thường nhấn mạnh sự hài hòa và tránh các hình dạng góc nhọn có thể tạo sát khí, nhưng cần tham khảo thêm tài liệu chuyên sâu. Bạn có thể kiểm tra các sách về phong thủy thực hành trong xây dựng để có lời khuyên chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.141 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không đề cập đến hình vuông theo tham chiếu, mà né tránh và đưa thông tin tổng quát không chính xác."})
+[89] Q: Tại sao không nên xây ba căn nhà liền nhau trên một thửa đất?
+ REF: Ba căn liền nhau khiến căn giữa mất sinh khí; phạm 'tam liên bại lộc', không lợi cho gia chủ.
+ PRED: Tôi không chắc từ tài liệu hiện có về lý do cụ thể không nên xây ba căn nhà liền nhau trên một thửa đất, vì các nguồn chỉ đề cập tổng quát đến phong thủy môi trường sống
+và kiến trúc nhà ở mà không chi tiết hóa vấn đề này. Trong phong thủy, việc phân chia đất đai thường cần xem xét dòng chảy năng lượng (khí) để tránh tích tụ âm khí hoặc cản trở sự hài hòa, nhưng không có dữ liệu trực tiếp hỗ trợ. Bạn có thể cần tham khảo thêm tài liệu chuyên sâu về phong thủy kiến trúc để có câu trả lời chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.080 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp lý do chính xác từ tham chiếu (căn giữa mất sinh khí, phạm 'tam liên bại lộc'), chỉ đề cập tổng quát và thừa nhận thiếu dữ liệu."})
+[90] Q: Nhà cao vượt trội so với nhà xung quanh có tốt không?
+ REF: Không; nhà cao quá gây mất cân bằng âm dương và thu hút tò mò, soi mói.
+ PRED: Trong phong thủy, việc nhà cao vượt trội so với nhà xung quanh có thể mang lại lợi thế về "khí thế" và tầm nhìn thoáng đãng, giúp thu hút năng lượng tích cực nếu được thi
+ết kế hài hòa với địa hình. Tuy nhiên, nếu quá cao sẽ tạo cảm giác cô lập hoặc "đè nén" khí của khu vực lân cận, dẫn đến mất cân bằng âm dương. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể này, nên khuyên nên tham khảo thêm chuyên gia phong thủy thực địa.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.191 | Judge: 0.700 ({"score": 0.7, "rationale": "Đúng về mất cân bằng âm dương, nhưng thêm lợi ích tiềm năng và thừa nhận không chắc chắn, không khớp hoàn toàn với tham chiếu tiêu cực rõ ràng."})
+[91] Q: Gia đình ít người có nên xây nhà quá rộng với nhiều phòng không?
+ REF: Không; nhà rộng nhiều phòng với ít người gây cảm giác vắng lạnh và mất cân bằng.
+ PRED: Theo phong thủy, việc xây nhà quá rộng với nhiều phòng cho gia đình ít người có thể dẫn đến không gian trống trải, dễ tích tụ âm khí và làm giảm sự lưu thông sinh khí, ản
+h hưởng đến sự thịnh vượng của gia đình. Nên thiết kế nhà phù hợp với số lượng thành viên để đảm bảo sự cân bằng âm dương và tiện lợi sử dụng. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể hơn.
+
+Nguồn: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.198 | Judge: 0.950 ({"score": 0.95, "rationale": "Trả lời khớp với tham chiếu về việc không nên xây nhà rộng gây vắng lạnh và mất cân bằng, bổ sung giải thích phong thủy chính xác; trừ nhẹ do phần không chắc chắn ở cuối."})
+[92] Q: Phòng khách trong căn hộ nhỏ nên có diện tích thế nào?
+ REF: Nên vừa phải, không quá rộng để tránh cảm giác lạnh nhạt.
+ PRED: Trong phong thủy, diện tích phòng khách trong căn hộ nhỏ cần được thiết kế hài hòa với tổng thể không gian sống để đảm bảo dòng chảy năng lượng (khí) thông thoáng, tránh
+cảm giác chật hẹp. Tuy nhiên, tài liệu hiện có không cung cấp kích thước cụ thể cho phòng khách, mà chỉ nhấn mạnh nguyên tắc cơ bản về môi trường sống và sự chuyển động tự nhiên. Tôi không chắc từ tài liệu hiện có về con số diện tích chính xác.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.111 | Judge: 0.400 ({"score": 0.4, "rationale": "Trả lời nhấn mạnh hài hòa và tránh chật hẹp, phù hợp phần nào với 'vừa phải', nhưng bỏ qua yếu tố tránh quá rộng để không lạnh nhạt; thừa nhận thiếu dữ liệu cụ thể làm giảm độ chính xác trực tiếp."})
+[93] Q: Khoảng sân trống trước nhà được gọi là gì và có tác dụng gì?
+ REF: Gọi là 'bể khí'; đây là nơi tích tụ và điều tiết sinh khí vào nhà.
+ PRED: Tôi không chắc từ tài liệu hiện có, vì các đoạn trích không đề cập trực tiếp đến khoảng sân trống trước nhà trong phong thủy.
+
+Nguồn: phong_thuy_toan_tap.pdf, fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf, TU_VI_THUC_HANH.pdf
+ F1: 0.034 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp tên gọi 'bể khí' hoặc tác dụng tích tụ và điều tiết sinh khí, chỉ thừa nhận thiếu thông tin từ nguồn."})
+[94] Q: Nền nhà nên cao hơn hay bằng mặt đất xung quanh?
+ REF: Nền nên đắp cao hơn một chút so với bình địa để tránh Âm vượng xâm nhập.
+ PRED: Trong phong thủy, nền nhà nên được thiết kế cao hơn mặt đất xung quanh để tránh tình trạng ẩm thấp, nước đọng và đảm bảo dòng chảy năng lượng (khí) thông thoáng, giúp gia
+ chủ tránh các vấn đề về sức khỏe và tài lộc. Nếu nền nhà bằng hoặc thấp hơn mặt đất, có thể dẫn đến tích tụ âm khí, gây bất lợi cho sự thịnh vượng. Điều này được nhấn mạnh trong các nguyên tắc cơ bản về môi trường sống và xây dựng nhà ở.
+
+Nguồn: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.114 | Judge: 1.000 ({"score": 1.0, "rationale": "Trả lời chính xác khớp ý tham chiếu: nền cao hơn để tránh âm khí (Âm vượng) xâm nhập, dù dùng từ đồng nghĩa và mở rộng lý do phong thủy."})
+[95] Q: Phòng thờ nên đặt ở đâu trong nhà?
+ REF: Nên đặt ở vị trí cao, yên tĩnh, tách biệt với phòng ngủ và nguồn tiếng ồn.
+ PRED: Tôi không chắc từ tài liệu hiện có về vị trí cụ thể của phòng thờ trong nhà, vì các nguồn chỉ cung cấp giới thiệu chung về phong thủy và kiến trúc nhà ở mà không đề cập c
+hi tiết đến vấn đề này. Bạn có thể cần tham khảo thêm tài liệu chuyên sâu về phong thủy thực hành để xác định vị trí phù hợp, thường dựa trên hướng nhà và nguyên tắc cân bằng âm dương.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.125 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp vị trí cụ thể (cao, yên tĩnh, tách biệt phòng ngủ và tiếng ồn) như tham chiếu, mà thừa nhận thiếu thông tin và gợi ý chung chung."})
+[96] Q: Phòng thờ nên dùng màu gì?
+ REF: Nên dùng màu ấm để tạo cảm giác trang trọng và ấm cúng.
+ PRED: Dựa trên tài liệu hiện có, không có thông tin cụ thể về màu sắc phù hợp cho phòng thờ. Phong thủy nhấn mạnh vào sự hài hòa với môi trường sống, nhưng chi tiết về màu cho không gian thờ cúng chưa được đề cập rõ ràng. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf, TU_VI_THUC_HANH.pdf
+ F1: 0.052 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin cụ thể về màu sắc phù hợp, trái ngược với tham chiếu khuyến nghị dùng màu ấm."})
+[97] Q: Phòng học nên đặt ở khu vực nào theo Bát quái?
+ REF: Ở khu vực kiến thức (cung Học vấn), tránh gần cửa ra vào hoặc phòng ngủ.
+ PRED: Theo tài liệu phong thủy cơ bản, Bát quái là công cụ quan trọng để phân tích năng lượng trong không gian sống, nhưng không có thông tin cụ thể về vị trí đặt phòng học. Tô
+i không chắc từ tài liệu hiện có về khu vực chính xác cho phòng học theo Bát quái, vì nội dung chủ yếu giới thiệu nguồn gốc phong thủy mà không chi tiết hóa ứng dụng này. Bạn có thể cần tham khảo thêm các tài liệu chuyên sâu về Hậu Thiên Bát Quái để xác định hướng Đông hoặc Đông Nam hỗ trợ học tập.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.080 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời không đề cập đến 'khu vực kiến thức (cung Học vấn)' hay tránh cửa ra vào/phòng ngủ như tham chiếu, mà phủ nhận thông tin cụ thể và gợi ý hướng Đông/Đông Nam không chính xác khớp."})
+[98] Q: Phòng học nên sơn màu gì?
+ REF: Nên sơn màu vàng nhạt hoặc màu sáng để tăng dương khí.
+ PRED: Từ tài liệu hiện có, tôi không tìm thấy thông tin cụ thể về màu sơn phù hợp cho phòng học theo phong thủy. Phong thủy nhấn mạnh việc chọn màu dựa trên nguyên tắc hài hòa với môi trường và năng lượng tự nhiên, nhưng không có hướng dẫn chi tiết cho không gian học tập. Tôi không chắc từ tài liệu hiện có.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.051 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời phủ nhận thông tin cụ thể về màu sơn cho phòng học, mâu thuẫn trực tiếp với tham chiếu gợi ý màu vàng nhạt hoặc sáng để tăng dương khí."})
+[99] Q: Phòng giải trí có nên đặt gần cửa chính không?
+ REF: Không; phòng giải trí không nên đặt gần cửa chính để tránh tiêu tốn thời gian và tiền bạc.
+ PRED: Từ tài liệu hiện có, không có thông tin cụ thể về việc đặt phòng giải trí gần cửa chính trong phong thủy. Phong thủy nhấn mạnh vào sự hài hòa môi trường sống và dòng chảy năng lượng, nhưng vị trí này có thể ảnh hưởng đến sự cân bằng khí nếu không được xem xét kỹ. Tôi không chắc từ tài liệu hiện có để đưa ra lời khuyên chính xác.
+
+Nguồn: phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf
+ F1: 0.215 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời không khẳng định rõ 'Không' như tham chiếu, thay vào đó thừa nhận thiếu thông tin cụ thể và đưa ra suy luận chung mơ hồ, không khớp với lý do tránh tiêu tốn thời gian/tiền bạc."})
+[100] Q: Cửa chính trong phong thủy là gì và cần có đặc điểm gì?
+ REF: Cửa chính là nơi đón khí; nên rộng, chắc chắn, mở vào trong và quay theo hướng hợp tuổi chủ nhà.
+ PRED: Tôi không chắc từ tài liệu hiện có về định nghĩa cụ thể và đặc điểm của cửa chính trong phong thủy, vì ngữ cảnh chỉ cung cấp giới thiệu chung về nguồn gốc và ý nghĩa của phong thủy. Các tài liệu chủ yếu tập trung vào lịch sử và ứng dụng cơ bản, không chi tiết hóa về yếu tố cửa chính. Bạn có thể cung cấp thêm ngữ cảnh để tôi hỗ trợ chính xác hơn.
+
+Nguồn: phong_thuy_toan_tap.pdf
+ F1: 0.143 | Judge: 0.000 ({"score": 0.0, "rationale": "Trả lời không cung cấp thông tin chính xác về định nghĩa và đặc điểm cửa chính theo tham chiếu, thay vào đó thừa nhận thiếu kiến thức và yêu cầu thêm ngữ cảnh."})
+[101] Q: Cửa phụ có cần lựa chọn theo tuổi gia chủ không?
+ REF: Không; cửa phụ theo thước Lỗ Ban, không phải theo tuổi gia chủ.
+ PRED: Trong phong thủy nhà ở, cửa chính thường cần chọn hướng theo tuổi gia chủ để hợp với cung mệnh và đón sinh khí tốt. Tuy nhiên, cửa phụ không bắt buộc phải lựa chọn nghiêm ngặt theo tuổi như vậy, mà chủ yếu cần tránh hướng xung khắc với tổng thể ngôi nhà và đảm bảo thông thoáng. Tôi không chắc từ tài liệu hiện có về chi tiết cụ thể cho cửa phụ.
+
+Nguồn: phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf, fengshui_phong_thuy_toan_tap.pdf
+ F1: 0.180 | Judge: 0.700 ({"score": 0.7, "rationale": "Đúng ở phần cửa phụ không bắt buộc theo tuổi gia chủ, nhưng thiếu đề cập thước Lỗ Ban và có sự không chắc chắn từ tài liệu, làm giảm độ chính xác."})
+
+Done in 1006.76s | k=4
+ Avg F1: 0.111 | Avg Judge: 0.388

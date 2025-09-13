@@ -8,6 +8,7 @@ from django.core.management import BaseCommand, CommandError
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_ollama import ChatOllama
 
+from copilot.llm.provider import get_chat
 from copilot.management.commands.eval_retrieval import read_jsonl
 from copilot.management.commands.rag_ask import ANSWER_PROMPT
 from copilot.rag.retrieve import get_retriever
@@ -74,7 +75,7 @@ class Command(BaseCommand):
             raise CommandError(f"Eval set rỗng: {eval_path}")
 
         retriever = get_retriever(k)
-        llm = ChatOllama(model=model)
+        llm = get_chat(model=model)
 
         f1s, judge_scores = [], []
         t0 = time.time()

@@ -7,8 +7,9 @@ from typing import List
 from django.core.management import BaseCommand, CommandError
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_ollama import ChatOllama
 from pydantic import BaseModel, Field
+
+from copilot.llm.provider import get_chat
 
 
 class FengshuiAnswer(BaseModel):
@@ -34,7 +35,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         model = os.getenv("LLM_MODEL")
-        llm = ChatOllama(model=model, temperature=0)
+        llm = get_chat(model, temperature=0.0)
+        self.stdout.write(f"LLM={llm.__class__.__name__} | model={model}")
 
         # Tạo parser + format instructions
         parser = PydanticOutputParser(pydantic_object=FengshuiAnswer)
