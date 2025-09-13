@@ -872,30 +872,12 @@ copilot/management/commands/eval_answer.py
 ...
 - judge_raw = (JUDGE_PROMPT | llm).invoke(...)
 + judge_raw = (JUDGE_PROMPT | get_chat(model=model, temperature=0)).invoke(...)
-
-copilot/management/commands/qa_graph.py
-- from langchain_ollama import ChatOllama
-+ from ...llm.provider import get_chat
-...
-def node_answer(state):
--   llm = ChatOllama(model=model, temperature=temp)
-+   llm = get_chat(model=model, temperature=temp)
-...
-def node_grade(state):
--   llm = ChatOllama(model=model, temperature=0)
-+   llm = get_chat(model=model, temperature=0)
 ```
 
 Lưu ý: không đụng Bài 3 (ingest/retriever) — embeddings vẫn là OllamaEmbeddings(nomic-embed-text).
 
 5) Kiểm thử nhanh (switch bằng .env, không sửa code)
 ```bash
-python manage.py structured_qa --q "Mệnh Kim hợp màu gì?"
-```
-
-# 2) Dùng OpenRouter
-```bash
 python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?"
-python manage.py qa_graph --q "Ngũ hành gồm những yếu tố nào?" --show-trace
 ```
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
