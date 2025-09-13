@@ -227,7 +227,7 @@ CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 120))
 TOP_K = int(os.getenv("RAG_TOP_K", 4))
 
 # Model
-EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL", "nomic-embed-text")
+EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL") # Tôi dùng bge-m3
 LLM_MODEL = os.getenv("LLM_MODEL")
 
 # Đảm bảo thư mục tồn tại
@@ -774,3 +774,128 @@ Phần này nếu máy ai không đủ tài nguyên có thể xóa bớt nội d
     * Tăng k
     * Thay đổi chunk size/overlap
     * Thay embedding model
+
+## LLM Provider linh hoạt
+* Vấn đề: nhiều nơi gọi LLM (structured_qa, rag_ask, eval_answer, qa_graph). Nếu đổi provider (Ollama ↔ OpenRouter), sửa tay từng file sẽ dễ lỗi.
+* Giải pháp: tạo một factory nhỏ get_chat(...) trả về model đã cấu hình sẵn dựa trên .env. Mọi lệnh chỉ from ... import get_chat và dùng.
+* Lợi ích: DRY, đổi provider bằng sửa .env, không chạm code nghiệp vụ (RAG/graph giữ nguyên).
+* Phạm vi: chỉ Chat model cho sinh câu trả lời/chấm điểm. Embeddings & Chroma vẫn dùng Ollama như Bài 3 (không đổi).
+
+Thực hành — Bật switch Ollama/OpenRouter
+1) Cài gói (nếu chưa)
+pip install -U langchain-openai openai langchain-ollama
+
+2) Cập nhật .env
+```
+# Chọn 1:
+LLM_PROVIDER=ollama
+LLM_MODEL=llama3.1:8b
+
+# Hoặc:
+LLM_PROVIDER=openrouter
+LLM_MODEL=openrouter/sonoma-sky-alpha
+OPENROUTER_API_KEY=or-xxxxxxxxxxxxxxxx
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_HTTP_REFERER=http://localhost:8000
+OPENROUTER_APP_TITLE=fengshui-copilot-dev
+```
+3) Tạo factory: copilot/llm/provider.py
+
+Chỉ thêm 1 file nhỏ để tránh lặp code; không đụng gì tới RAG.
+```python
+# copilot/llm/provider.py
+class ProviderError(RuntimeError): ...
+def _env(name: str, default: Optional[str] = None) -> Optional[str]:
+    v = os.getenv(name, default)
+    return v.strip() if isinstance(v, str) else v
+
+def get_chat(model: Optional[str] = None, temperature: float = 0.0):
+    """
+    Trả về Chat model đã cấu hình theo .env:
+      - LLM_PROVIDER=ollama -> ChatOllama(model)
+      - LLM_PROVIDER=openrouter -> ChatOpenAI(base_url=OpenRouter)
+      - (tuỳ chọn) LLM_PROVIDER=openai -> ChatOpenAI (OpenAI gốc)
+    """
+    provider = (_env("LLM_PROVIDER", "ollama") or "ollama").lower()
+    model = model or _env("LLM_MODEL", "llama3.1:8b")
+
+    if provider == "ollama":
+        return ChatOllama(model=model, temperature=temperature)
+
+    if provider == "openrouter":
+        api_key = _env("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ProviderError("Thiếu OPENROUTER_API_KEY trong .env")
+        base_url = _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+        headers = {
+            "HTTP-Referer": _env("OPENROUTER_HTTP_REFERER", "http://localhost"),
+            "X-Title": _env("OPENROUTER_APP_TITLE", "fengshui-copilot-dev"),
+        }
+        return ChatOpenAI(
+            model=model,
+            temperature=temperature,
+            api_key=api_key,
+            base_url=base_url,
+            default_headers=headers,
+        )
+
+    if provider == "openai":
+        api_key = _env("OPENAI_API_KEY")
+        if not api_key:
+            raise ProviderError("Thiếu OPENAI_API_KEY trong .env")
+        return ChatOpenAI(model=model, temperature=temperature, api_key=api_key)
+
+    raise ProviderError(f"LLM_PROVIDER không hỗ trợ: {provider}")
+```
+4) Sửa 4 lệnh để dùng factory (patch mẫu)
+```
+copilot/management/commands/structured_qa.py
+- from langchain_ollama import ChatOllama
++ from ...llm.provider import get_chat
+...
+- llm = ChatOllama(model=model, temperature=temp)
++ llm = get_chat(model=model, temperature=temp)
+
+copilot/management/commands/rag_ask.py
+- from langchain_ollama import ChatOllama
++ from ...llm.provider import get_chat
+...
+- llm = ChatOllama(model=model, temperature=temp)
++ llm = get_chat(model=model, temperature=temp)
+
+copilot/management/commands/eval_answer.py
+- from langchain_ollama import ChatOllama
++ from ...llm.provider import get_chat
+...
+- llm = ChatOllama(model=model, temperature=0)
++ llm = get_chat(model=model, temperature=0)
+...
+- judge_raw = (JUDGE_PROMPT | llm).invoke(...)
++ judge_raw = (JUDGE_PROMPT | get_chat(model=model, temperature=0)).invoke(...)
+
+copilot/management/commands/qa_graph.py
+- from langchain_ollama import ChatOllama
++ from ...llm.provider import get_chat
+...
+def node_answer(state):
+-   llm = ChatOllama(model=model, temperature=temp)
++   llm = get_chat(model=model, temperature=temp)
+...
+def node_grade(state):
+-   llm = ChatOllama(model=model, temperature=0)
++   llm = get_chat(model=model, temperature=0)
+```
+
+Lưu ý: không đụng Bài 3 (ingest/retriever) — embeddings vẫn là OllamaEmbeddings(nomic-embed-text).
+
+5) Kiểm thử nhanh (switch bằng .env, không sửa code)
+```bash
+python manage.py structured_qa --q "Mệnh Kim hợp màu gì?"
+```
+
+# 2) Dùng OpenRouter
+```bash
+python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?"
+python manage.py qa_graph --q "Ngũ hành gồm những yếu tố nào?" --show-trace
+```
+# Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
