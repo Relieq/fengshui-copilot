@@ -5,3 +5,4 @@ __pycache__/
 .env
 .chromadb/
 \chroma
+.idea/
