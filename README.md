@@ -286,7 +286,7 @@ def load_corpus(corpus_dir: Path) -> List[Document]:
 
     return docs
 ```
-* Viết hàm chunk_documents để tách các Document lớn thành các đoạn nhỏ hơn có start_idx (vị trí bắt đầu trong văn bản gốc) để _make_id sau này tạo id ổn định:
+* Viết hàm chunk_documents để tách các Document lớn thành các đoạn nhỏ hơn có start_index (vị trí bắt đầu trong văn bản gốc) để _make_id sau này tạo id ổn định:
 ```python
 def chunk_documents(docs: List[Document]) -> List[Document]:
     splitter = RecursiveCharacterTextSplitter(
@@ -297,7 +297,7 @@ def chunk_documents(docs: List[Document]) -> List[Document]:
 
 def _make_id(doc: Document) -> str:
     src = doc.metadata.get("source", "")
-    start = doc.metadata.get("start_idx", None)
+    start = doc.metadata.get("start_index", None)
     return f"{src}::{start}"
 ```
 * Viết hàm build_or_update_chroma để tạo hoặc cập nhật Chroma vector store:
@@ -884,31 +884,33 @@ python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?"
 Tôi có thử chạy lại lệnh `python manage.py eval_answer --judge` với OpenRouter (sonoma-sky-alpha), kết quả được được lưu 
 vào file res_1.txt.
 
-# **Thảo luận lại phần ingest & retrieve của RAG (bài 3)**
-* Tôi tạo thêm 1 mục bổ sung này vì nhìn nhận lại trong file res_1.txt rằng:
-  * Rất nhiều câu trả lời có mẫu: “Tôi không chắc từ tài liệu hiện có”
-  → thực tế không phải là top-k context không chứa dữ kiện cần (model nghĩ rằng “thiếu ngữ cảnh thì nói không chắc”). Mà 
-  là model không thể suy luận từ ngữ cảnh đã có. Ví dụ ở file res_pymupdf.txt (tôi có chỉnh sửa cách đọc pdf):
-  
-  ```
-  [74] Q: Vì sao cần cân bằng Hỏa và Thủy trong bếp? 
-  REF: Bếp lò tượng trưng cho Hỏa và nước sinh hoạt tượng trưng cho Thủy; hai hành này xung khắc nên cần cân bằng để 
-  tránh xung đột năng lượng. 
-  PRED: Trong phong thủy, việc cân bằng Hỏa và Thủy là nguyên tắc cơ bản từ thuyết ngũ hành, nhằm duy trì sự hài hòa âm 
-  dương trong không gian sống. Tuy nhiên, tài liệu hiện có chỉ đề cập tổng quát đến ngũ hành mà không chi tiết về ứng 
-  dụng trong bếp. Tôi không chắc lý do cụ thể từ các nguồn này. 
-  
-  Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf 
-  F1: 0.143 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời chỉ đề cập nguyên tắc ngũ hành chung và thừa nhận thiếu 
-  chi tiết cụ thể về bếp, không khớp với giải thích xung khắc Hỏa-Thủy trong tham chiếu."})
-    ```
-  * Ở đây, nếu là con người, sẽ liên hệ sự hài hòa âm dương (thông tin truy xuất được) với các sự vật trong bếp (bếp lò, nước 
-  sinh hoạt) để làm ví dụ giải thích câu hỏi "Tại sao cần cân bằng?".
-* Khái niệm: RAG ≠ Reasoning
-  * RAG tốt = mang về đúng thông tin
-  * Reasoning tốt = kết nối thông tin đó thành lập luận (nguyên nhân → hệ quả, quy tắc → áp dụng).
-* Khi câu hỏi là "Vì sao? Tại sao?" cần prompt synthesis (kết hợp, tổ hợp prompt) và/hoặc multi-query retrieval (truy vấn 
-nhiều lần) để phủ đủ góc độ, sau đó ép model trả lời theo kiểu lập luận thay vì chung chung.
+# Triển khai lại mục ingest:
+Mục này được tạo ra vì lúc trước thật ra ở hàm _make_id() thuộc file ingest.py tôi có sơ suất ghi start_idx thay vì start_index, 
+khiến tôi lầm tưởng rằng phần ingest không quá nặng (vì lấy start_idx - không có nên mặc định là None → trùng id → ít chunk). 
+
+Lúc sau chỉnh sửa lại cho đúng thì thấy phần máy không chịu được nên từ mục này chúng ta sẽ triển khai lại như sau:
+* Embedding: dùng Hugging Face (mặc định Inference API BAAI/bge-m3))
+* Vector database: chuyển sang Supabase (Postgres + pgvector) với LangChain SupabaseVectorStore (vì máy tôi yếu + project 
+chúng ta làm theo hướng production → Supabase được khuyến nghị là phù hợp hơn).
+* Embedding model: BAAI/bge-m3, 1024 chiều (phù hợp tiếng Việt).
+
+## Bước 1: Tạo bảng và function trong Supabase
+* Ở bước này bạn hãy tạo một project Supabase fengshui-copilot tại https://supabase.com/ (nếu chưa có).
+* Sau đó trong Supabase dashboard → SQL Editor → Chọn Quickstarts "Langchain" ở mục Community, lúc đó một đoạn SQL query 
+được tạo ra nhằm tạo bảng và function cần thiết cho LangChain SupabaseVectorStore.
+* Chúng ta sẽ chỉnh sửa lại đoạn query này một chút:
+```sql
+-- Bật pgvector extension (nếu chưa)
+create extension if not exists vector;
+
+-- Tạo bảng documents
+create table if not exists documents (
+    id bigserial primary key,
+    context text,
+    metadata jsonb,
+    embedding vector(1024) 
+)
+```
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
 ## Khái niệm căn bản LangGraph
