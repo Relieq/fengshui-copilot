@@ -97,6 +97,7 @@ class Command(BaseCommand):
                 ctx_lines.append(f"[{j + 1}] {snippet} (SOURCE: {src})")
 
             context = "\n\n".join(ctx_lines) if ctx_lines else "(Không có ngữ cảnh)"
+            print(context)
 
             pred = (ANSWER_PROMPT | llm).invoke({
                 "question": q,

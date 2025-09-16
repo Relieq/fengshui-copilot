@@ -880,4 +880,40 @@ Lưu ý: không đụng Bài 3 (ingest/retriever) — embeddings vẫn là Ollam
 ```bash
 python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?"
 ```
+
+Tôi có thử chạy lại lệnh `python manage.py eval_answer --judge` với OpenRouter (sonoma-sky-alpha), kết quả được được lưu 
+vào file res_1.txt.
+
+# **Thảo luận lại phần ingest & retrieve của RAG (bài 3)**
+* Tôi tạo thêm 1 mục bổ sung này vì nhìn nhận lại trong file res_1.txt rằng:
+  * Rất nhiều câu trả lời có mẫu: “Tôi không chắc từ tài liệu hiện có”
+  → thực tế không phải là top-k context không chứa dữ kiện cần (model nghĩ rằng “thiếu ngữ cảnh thì nói không chắc”). Mà 
+  là model không thể suy luận từ ngữ cảnh đã có. Ví dụ ở file res_pymupdf.txt (tôi có chỉnh sửa cách đọc pdf):
+  
+  ```
+  [74] Q: Vì sao cần cân bằng Hỏa và Thủy trong bếp? 
+  REF: Bếp lò tượng trưng cho Hỏa và nước sinh hoạt tượng trưng cho Thủy; hai hành này xung khắc nên cần cân bằng để 
+  tránh xung đột năng lượng. 
+  PRED: Trong phong thủy, việc cân bằng Hỏa và Thủy là nguyên tắc cơ bản từ thuyết ngũ hành, nhằm duy trì sự hài hòa âm 
+  dương trong không gian sống. Tuy nhiên, tài liệu hiện có chỉ đề cập tổng quát đến ngũ hành mà không chi tiết về ứng 
+  dụng trong bếp. Tôi không chắc lý do cụ thể từ các nguồn này. 
+  
+  Nguồn: fengshui_phong_thuy_toan_tap.pdf, phong_thuy_thuc_hanh_trong_xay_dung_va_kien_truc_nha_o.pdf 
+  F1: 0.143 | Judge: 0.200 ({"score": 0.2, "rationale": "Trả lời chỉ đề cập nguyên tắc ngũ hành chung và thừa nhận thiếu 
+  chi tiết cụ thể về bếp, không khớp với giải thích xung khắc Hỏa-Thủy trong tham chiếu."})
+    ```
+  * Ở đây, nếu là con người, sẽ liên hệ sự hài hòa âm dương (thông tin truy xuất được) với các sự vật trong bếp (bếp lò, nước 
+  sinh hoạt) để làm ví dụ giải thích câu hỏi "Tại sao cần cân bằng?".
+* Khái niệm: RAG ≠ Reasoning
+  * RAG tốt = mang về đúng thông tin
+  * Reasoning tốt = kết nối thông tin đó thành lập luận (nguyên nhân → hệ quả, quy tắc → áp dụng).
+* Khi câu hỏi là "Vì sao? Tại sao?" cần prompt synthesis (kết hợp, tổ hợp prompt) và/hoặc multi-query retrieval (truy vấn 
+nhiều lần) để phủ đủ góc độ, sau đó ép model trả lời theo kiểu lập luận thay vì chung chung.
+
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
+## Khái niệm căn bản LangGraph
+* LangGraph là thư viện để bạn "vẽ" đồ thị trạng thái cho quy trình nhiều bước với LLM:
+  * State: 1 dict chứa các field chúng ta cần
+  * Node: 1 hàm nhận state và trả về phần cập nhật state
+  * Edge: đường đi giữa các node, có thể cố định (A → B) hoặc có điều kiện (A → B/C tùy dữ liệu trong state)
+  * Loop: dùng cạnh có điều kiện để quay lại 1 node trước đó (ví dụ: chấm điểm thấp → quay lại truy vấn)

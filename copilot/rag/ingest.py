@@ -9,6 +9,8 @@ from langchain_core.documents import Document
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
+from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 
 from copilot.rag.settings import CHUNK_SIZE, CHUNK_OVERLAP, ensure_dirs, CHROMA_DIR, EMBEDDING_MODEL, COLLECTION_NAME, \
     CORPUS_DIR
@@ -18,16 +20,15 @@ def _load_text_file(path: Path) -> str:
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read()
 
-def _load_pdf_file(path:Path) -> str:
-    text = []
+def _load_pdf_file(path: Path) -> str:
     try:
-        reader = PdfReader(str(path))
-        for page in reader.pages:
-            text.append(page.extract_text() or "")
+        docs = PyMuPDFLoader(str(path)).load()
+        return "\n".join(d.page_content for d in docs)
     except Exception:
-        return ""
+        # Fallback: PyPDFLoader nếu PyMuPDF lỗi
+        docs = PyPDFLoader(str(path)).load()
+        return "\n".join(d.page_content for d in docs)
 
-    return "\n".join(text)
 
 def load_corpus(corpus_dir: Path) -> List[Document]:
     EXTS = (".txt", ".md", ".markdown", ".mdx", ".pdf")
@@ -64,7 +65,7 @@ def chunk_documents(docs: List[Document]) -> List[Document]:
 
 def _make_id(doc: Document) -> str:
     src = doc.metadata.get("source", "")
-    start = doc.metadata.get("start_idx", None)
+    start = doc.metadata.get("start_index", None)
     return f"{src}::{start}"
 
 def build_or_update_chroma(chunks: List[Document], reset: bool = False) -> int:
