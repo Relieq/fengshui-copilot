@@ -349,7 +349,7 @@ def ingest_corpus(reset: bool = False) -> dict:
     }
 ```
 5. Tạo file truy xuất (retrieve) tài liệu:
-* Tạo file copilot/rag/retrieve.py
+* Tạo file copilot/rag/retriever.py
 ```python
 def get_retriever(top_k: int | None = None):
     embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
@@ -800,14 +800,17 @@ OPENROUTER_HTTP_REFERER=http://localhost:8000
 OPENROUTER_APP_TITLE=fengshui-copilot-dev
 ```
 3) Tạo factory: copilot/llm/provider.py
+* Thêm vào llm/__init__.py
+```python
+def _env(name: str, default: Optional[str] = None) -> Optional[str]:
+    v = os.getenv(name, default)
+    return v.strip() if isinstance(v, str) else v
+```
 
 Chỉ thêm 1 file nhỏ để tránh lặp code; không đụng gì tới RAG.
 ```python
 # copilot/llm/provider.py
 class ProviderError(RuntimeError): ...
-def _env(name: str, default: Optional[str] = None) -> Optional[str]:
-    v = os.getenv(name, default)
-    return v.strip() if isinstance(v, str) else v
 
 def get_chat(model: Optional[str] = None, temperature: float = 0.0):
     """
@@ -892,7 +895,7 @@ Lúc sau chỉnh sửa lại cho đúng thì thấy phần máy không chịu đ
 * Embedding: dùng Hugging Face (mặc định Inference API BAAI/bge-m3))
 * Vector database: chuyển sang Supabase (Postgres + pgvector) với LangChain SupabaseVectorStore (vì máy tôi yếu + project 
 chúng ta làm theo hướng production → Supabase được khuyến nghị là phù hợp hơn).
-* Embedding model: BAAI/bge-m3, 1024 chiều (phù hợp tiếng Việt).
+* Embedding model: BAAI/bge-m3, 1024 chiều (phù hợp tiếng Việt). Tham khảo thêm [tại đây](https://huggingface.co/BAAI/bge-m3).
 
 ## Bước 1: Tạo bảng và function trong Supabase
 * Ở bước này bạn hãy tạo một project Supabase fengshui-copilot tại https://supabase.com/ (nếu chưa có).
@@ -905,11 +908,116 @@ create extension if not exists vector;
 
 -- Tạo bảng documents
 create table if not exists documents (
-    id bigserial primary key,
-    context text,
-    metadata jsonb,
-    embedding vector(1024) 
+    id bigserial primary key, -- bigint, serial nghĩa là auto-increment
+    content text, -- tương ứng với Document.page_content
+    metadata jsonb, -- json binary, hiệu quả hơn json thông thường, tương ứng với Document.metadata
+    embedding vector(1024) -- bge-m3: 1024 dims
 )
+
+-- Tìm kiếm consine (trả similarity 0..1)
+create or replace function match_documents(
+    query_embedding vector(1024), -- embedding câu hỏi của người dùng
+    match_count int, -- top-k
+    filter jsonb default '{}'::jsonb -- bộ lọc metadata, ví dụ {"source": "file.pdf"} để chỉ tìm trong file.pdf
+) returns table (
+    id bigint,
+    content text,
+    metadata jsonb,
+    similarity double precision
+) language sql stable as $$ -- hàm viết bằng SQL thuần (không PL/pgSQL) 
+    -- "stable" nghĩa là kết quả không thay đổi nếu input giống (tối ưu cache)
+    select
+        d.id,
+        d.content,
+        d.metadata,
+        1 - (d.embedding <=> query_embedding) as similarity -- cosine simlarity (1 - distance), 0..2
+    from documents as d
+    where documents @> filter -- @>: contains
+    order by d.embedding <=> query_embedding -- toán tử pgvector cho consine distance
+    limit match_count;
+$$;
+
+-- Tạo index để tăng tốc tìm kiếm
+create index if not exists documents_embedding_idx 
+    -- Inverted file with flat: thuật toán approximate nearest neighbor (ANN) từ pgvector, nhanh cho vector search lớn.
+    -- Thử tìm hiểu thì có vẻ giống k-means.
+    on documents using ivfflat (embedding vector_cosine_ops)
+    -- index trên cột embedding, dùng toán tử vector_cosine_ops để tối ưu cho consine distance.
+    with (lists = 100); -- Số cụm trong ivfflat, càng lớn càng chính xác nhưng chậm hơn. Chúng ta sẽ xem xét lại sau.
+    -- Quy tắc: lists ≈ sqrt(N) (N = số vectors), hoặc 1-4% của N. Ví dụ: N=10K → lists=100 (sqrt(10K)=100).
+```
+
+## Bước 2: Cấu hình môi trường
+* Bổ sung các biến môi trường trong .env:
+```
+# Embeddings (Hugging Face Inference API)
+EMBED_PROVIDER=hf_inference     # hoặc: hf_endpoint (nếu bạn có Endpoint/TEI riêng)
+EMBEDDING_MODEL=BAAI/bge-m3
+HUGGINGFACEHUB_API_TOKEN=hf_xxx...  # Inference API/Endpoint token
+
+# Supabase (server-side ONLY)
+SUPABASE_URL=https://xxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...# key service_role (đừng để client thấy)
+SUPABASE_TABLE=documents
+SUPABASE_QUERY_NAME=match_documents
+```
+
+## Bước 3: Tạo factory embeddings (giống get_chat() ấy)
+* HuggingFaceInferenceAPIEmbeddings / HuggingFaceEndpointEmbeddings được LangChain recommend cho Inference API/Endpoint. 
+Supabase Python client khởi tạo bằng create_client(url, key).
+* Tạo file copilot/llm/embeddings.py
+```python
+class EmbeddingProviderError(RuntimeError):...
+
+def get_embeddings():
+    provider = _env("EMBEDDING_PROVIDER", "hf_inference").lower()
+    model = _env("EMBEDDING_MODEL", "BAAI/bge-m3").lower()
+
+    if provider == "ollama":
+        return OllamaEmbeddings(model=model)
+
+    if provider == "hf_inference":
+        api_key = _env("HUGGINGFACEHUB_API_TOKEN")
+        if not api_key:
+            raise EmbeddingProviderError("Thiếu HUGGINGFACEHUB_API_TOKEN trong .env")
+        return HuggingFaceInferenceAPIEmbeddings(api_key=api_key, model_name=model)
+
+    if provider == "hf_endpoint":
+        api_key = _env("HUGGINGFACEHUB_API_TOKEN")
+        if not api_key:
+            raise EmbeddingProviderError("Thiếu HUGGINGFACEHUB_API_TOKEN trong .env")
+        return HuggingFaceEndpointEmbeddings(model=model, huggingfacehub_api_token=api_key)
+
+    raise EmbeddingProviderError(f"EMBEDDING_PROVIDER không được hỗ trợ: {provider}")
+```
+
+## Bước 4: Chuyển Vector Store sang Supabase
+* Dùng SupabaseVectorStore + MMR cho retriever.py:
+```python
+def _supabase_client():
+    url = os.getenv("SUPABASE_URL")
+    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+    assert url and key, "Thiếu SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY trong .env"
+    return create_client(url, key)
+
+def get_vectorstore():
+    client = _supabase_client()
+    embeddings = get_embeddings()
+    table = os.getenv("SUPABASE_TABLE", "documents")
+    query = os.getenv("SUPABASE_QUERY_NAME", "match_documents")
+    return SupabaseVectorStore(client=client, embedding=embeddings, table_name=table, query_name=query)
+
+def get_retriever(top_k: int | None = None):
+    vs = get_vectorstore()
+
+    return vs.as_retriever(
+        search_type="mmr",
+        search_kwargs={"k": top_k, "fetch_k": max(20, 5 * top_k)}
+    )
+```
+* Chỉnh ingest thành theo batch:
+```python
+
 ```
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”

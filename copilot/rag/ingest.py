@@ -103,7 +103,7 @@ def ingest_corpus(reset: bool = False) -> dict:
     ensure_dirs()
     docs = load_corpus(CORPUS_DIR)
     chunks = chunk_documents(docs)
-    n = build_or_update_chroma(chunks)
+    n = build_or_update_supabase(chunks)
 
     return {
         "files": len(docs),

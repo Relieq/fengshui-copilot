@@ -11,7 +11,7 @@ from langchain_ollama import ChatOllama
 from copilot.llm.provider import get_chat
 from copilot.management.commands.eval_retrieval import read_jsonl
 from copilot.management.commands.rag_ask import ANSWER_PROMPT
-from copilot.rag.retrieve import get_retriever
+from copilot.rag.retriever import get_retriever
 from copilot.rag.settings import DATA_DIR, TOP_K, LLM_MODEL
 
 

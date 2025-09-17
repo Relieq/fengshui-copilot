@@ -1,15 +1,11 @@
-import os
-
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+
+from copilot.llm import _env
 
 
 class ProviderError(RuntimeError):
     ...
-
-def _env(name: str, default: str | None = None) -> str | None:
-    v = os.getenv(name, default)
-    return v.strip() if isinstance(v, str) else v
 
 def get_chat(model: str | None, temperature: float = 0.0):
     provider = _env("LLM_PROVIDER", "ollama").lower()

@@ -4,7 +4,7 @@ from django.core.management import BaseCommand
 from langchain_core.prompts import ChatPromptTemplate
 
 from copilot.llm.provider import get_chat
-from copilot.rag.retrieve import get_retriever
+from copilot.rag.retriever import get_retriever
 from copilot.rag.settings import TOP_K, LLM_MODEL
 
 ANSWER_PROMPT = ChatPromptTemplate.from_messages([

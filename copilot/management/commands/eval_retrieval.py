@@ -5,7 +5,7 @@ from statistics import mean
 
 from django.core.management import BaseCommand, CommandError
 
-from copilot.rag.retrieve import get_retriever
+from copilot.rag.retriever import get_retriever
 from copilot.rag.settings import DATA_DIR, TOP_K
 
 
