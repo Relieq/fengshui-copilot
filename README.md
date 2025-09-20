@@ -802,7 +802,7 @@ OPENROUTER_APP_TITLE=fengshui-copilot-dev
 3) Tạo factory: copilot/llm/provider.py
 * Thêm vào llm/__init__.py
 ```python
-def _env(name: str, default: Optional[str] = None) -> Optional[str]:
+def env(name: str, default: Optional[str] = None) -> Optional[str]:
     v = os.getenv(name, default)
     return v.strip() if isinstance(v, str) else v
 ```
@@ -819,20 +819,20 @@ def get_chat(model: Optional[str] = None, temperature: float = 0.0):
       - LLM_PROVIDER=openrouter -> ChatOpenAI(base_url=OpenRouter)
       - (tuỳ chọn) LLM_PROVIDER=openai -> ChatOpenAI (OpenAI gốc)
     """
-    provider = (_env("LLM_PROVIDER", "ollama") or "ollama").lower()
-    model = model or _env("LLM_MODEL", "llama3.1:8b")
+    provider = (env("LLM_PROVIDER", "ollama") or "ollama")
+    model = model or env("LLM_MODEL", "llama3.1:8b")
 
     if provider == "ollama":
         return ChatOllama(model=model, temperature=temperature)
 
     if provider == "openrouter":
-        api_key = _env("OPENROUTER_API_KEY")
+        api_key = env("OPENROUTER_API_KEY")
         if not api_key:
             raise ProviderError("Thiếu OPENROUTER_API_KEY trong .env")
-        base_url = _env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+        base_url = env("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
         headers = {
-            "HTTP-Referer": _env("OPENROUTER_HTTP_REFERER", "http://localhost"),
-            "X-Title": _env("OPENROUTER_APP_TITLE", "fengshui-copilot-dev"),
+            "HTTP-Referer": env("OPENROUTER_HTTP_REFERER", "http://localhost"),
+            "X-Title": env("OPENROUTER_APP_TITLE", "fengshui-copilot-dev"),
         }
         return ChatOpenAI(
             model=model,
@@ -843,7 +843,7 @@ def get_chat(model: Optional[str] = None, temperature: float = 0.0):
         )
 
     if provider == "openai":
-        api_key = _env("OPENAI_API_KEY")
+        api_key = env("OPENAI_API_KEY")
         if not api_key:
             raise ProviderError("Thiếu OPENAI_API_KEY trong .env")
         return ChatOpenAI(model=model, temperature=temperature, api_key=api_key)
@@ -892,7 +892,7 @@ Mục này được tạo ra vì lúc trước thật ra ở hàm _make_id() thu
 khiến tôi lầm tưởng rằng phần ingest không quá nặng (vì lấy start_idx - không có nên mặc định là None → trùng id → ít chunk). 
 
 Lúc sau chỉnh sửa lại cho đúng thì thấy phần máy không chịu được nên từ mục này chúng ta sẽ triển khai lại như sau:
-* Embedding: dùng Hugging Face (mặc định Inference API BAAI/bge-m3))
+* Embedding: dùng Hugging Face (mặc định Endpoint API BAAI/bge-m3))
 * Vector database: chuyển sang Supabase (Postgres + pgvector) với LangChain SupabaseVectorStore (vì máy tôi yếu + project 
 chúng ta làm theo hướng production → Supabase được khuyến nghị là phù hợp hơn).
 * Embedding model: BAAI/bge-m3, 1024 chiều (phù hợp tiếng Việt). Tham khảo thêm [tại đây](https://huggingface.co/BAAI/bge-m3).
@@ -909,10 +909,11 @@ create extension if not exists vector;
 -- Tạo bảng documents
 create table if not exists documents (
     id bigserial primary key, -- bigint, serial nghĩa là auto-increment
+    uid text unique, -- id do ta tự tạo, tránh trùng lặp
     content text, -- tương ứng với Document.page_content
     metadata jsonb, -- json binary, hiệu quả hơn json thông thường, tương ứng với Document.metadata
-    embedding vector(1024) -- bge-m3: 1024 dims
-)
+    embedding vector(1024), -- bge-m3: 1024 dims
+);
 
 -- Tìm kiếm consine (trả similarity 0..1)
 create or replace function match_documents(
@@ -921,6 +922,7 @@ create or replace function match_documents(
     filter jsonb default '{}'::jsonb -- bộ lọc metadata, ví dụ {"source": "file.pdf"} để chỉ tìm trong file.pdf
 ) returns table (
     id bigint,
+    uid text,
     content text,
     metadata jsonb,
     similarity double precision
@@ -928,6 +930,7 @@ create or replace function match_documents(
     -- "stable" nghĩa là kết quả không thay đổi nếu input giống (tối ưu cache)
     select
         d.id,
+        d.uid,
         d.content,
         d.metadata,
         1 - (d.embedding <=> query_embedding) as similarity -- cosine simlarity (1 - distance), 0..2
@@ -950,14 +953,14 @@ create index if not exists documents_embedding_idx
 ## Bước 2: Cấu hình môi trường
 * Bổ sung các biến môi trường trong .env:
 ```
-# Embeddings (Hugging Face Inference API)
-EMBED_PROVIDER=hf_inference     # hoặc: hf_endpoint (nếu bạn có Endpoint/TEI riêng)
+# Embeddings (Hugging Face)
+EMBED_PROVIDER=hf_endpoint     # hoặc: hf_endpoint (nếu bạn có Endpoint/TEI riêng)
 EMBEDDING_MODEL=BAAI/bge-m3
-HUGGINGFACEHUB_API_TOKEN=hf_xxx...  # Inference API/Endpoint token
+HUGGINGFACEHUB_API_TOKEN=hf_xxx...
 
 # Supabase (server-side ONLY)
 SUPABASE_URL=https://xxxxxx.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...# key service_role (đừng để client thấy)
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 SUPABASE_TABLE=documents
 SUPABASE_QUERY_NAME=match_documents
 ```
@@ -969,39 +972,62 @@ Supabase Python client khởi tạo bằng create_client(url, key).
 ```python
 class EmbeddingProviderError(RuntimeError):...
 
+
 def get_embeddings():
-    provider = _env("EMBEDDING_PROVIDER", "hf_inference").lower()
-    model = _env("EMBEDDING_MODEL", "BAAI/bge-m3").lower()
+    provider = env("EMBED_PROVIDER", "hf_endpoint")
+    model = env("EMBEDDING_MODEL", "BAAI/bge-m3")
 
     if provider == "ollama":
         return OllamaEmbeddings(model=model)
 
     if provider == "hf_inference":
-        api_key = _env("HUGGINGFACEHUB_API_TOKEN")
+        api_key = env("HUGGINGFACEHUB_API_TOKEN")
         if not api_key:
             raise EmbeddingProviderError("Thiếu HUGGINGFACEHUB_API_TOKEN trong .env")
         return HuggingFaceInferenceAPIEmbeddings(api_key=api_key, model_name=model)
 
     if provider == "hf_endpoint":
-        api_key = _env("HUGGINGFACEHUB_API_TOKEN")
+        api_key = env("HUGGINGFACEHUB_API_TOKEN")
         if not api_key:
             raise EmbeddingProviderError("Thiếu HUGGINGFACEHUB_API_TOKEN trong .env")
-        return HuggingFaceEndpointEmbeddings(model=model, huggingfacehub_api_token=api_key)
+        return HuggingFaceEndpointEmbeddings(
+            model=model,
+            task="feature-extraction",
+            huggingfacehub_api_token=api_key
+        )
 
     raise EmbeddingProviderError(f"EMBEDDING_PROVIDER không được hỗ trợ: {provider}")
 ```
 
 ## Bước 4: Chuyển Vector Store sang Supabase
-* Dùng SupabaseVectorStore + MMR cho retriever.py:
+* Chuyển rag thành module, tạo file supa.py:
 ```python
-def _supabase_client():
+def get_supabase_client() -> client:
+    global _SUPABASE_CLIENT
+    if _SUPABASE_CLIENT is not None:
+        return _SUPABASE_CLIENT
+
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    assert url and key, "Thiếu SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY trong .env"
-    return create_client(url, key)
+    if not url or not key:
+        raise RuntimeError("Thiếu SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY trong .env")
 
+    _SUPABASE_CLIENT = create_client(url, key)
+    return _SUPABASE_CLIENT
+
+
+def get_supabase_table_name() -> str:
+    return os.getenv("SUPABASE_TABLE", "documents")
+
+
+def get_supabase_query_name() -> str:
+    # tên function tìm kiếm (match_documents) bạn đã tạo trong DB
+    return os.getenv("SUPABASE_QUERY_NAME", "match_documents")
+```
+* Dùng SupabaseVectorStore + MMR cho retriever.py:
+```python
 def get_vectorstore():
-    client = _supabase_client()
+    client = get_supabase_client()
     embeddings = get_embeddings()
     table = os.getenv("SUPABASE_TABLE", "documents")
     query = os.getenv("SUPABASE_QUERY_NAME", "match_documents")
@@ -1017,7 +1043,109 @@ def get_retriever(top_k: int | None = None):
 ```
 * Chỉnh ingest thành theo batch:
 ```python
+def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
+    """
+    Idempotent ingest:
+    - Với mỗi source: lấy danh sách uid đang có trong DB.
+    - Tạo uid hiện tại từ chunks.
+      * new = current_uids - db_uids  -> chỉ embed + upsert cho phần này.
+      * stale = db_uids - current_uids -> delete để làm sạch.
+    - Không kiểm tra nội dung thay đổi (không checksum).
+    """
+    embeds = get_embeddings()
+    client = get_supabase_client()
+    table = get_supabase_table_name()
 
+    # Kiểm tra metadata "source", "start_index"
+    # for doc in chunks:
+    #     print(f"[INGEST] {doc.metadata.get('source', '')} (start={doc.metadata.get('start_index', 0)})")
+
+    by_src: Dict[str, List[Document]] = defaultdict(list)
+    for doc in chunks:
+        by_src[doc.metadata.get("source", "")].append(doc)
+
+    # Kiểm tra các nguồn
+    print(by_src.keys())
+
+    total_new, total_delete = 0, 0
+
+    for src, docs in by_src.items():
+        res = client.table(table).select("uid").contains("metadata", {"source": src}).execute()
+        db_uids = set([row["uid"] for row in (res.data or [])])
+
+        cur_pairs = [(_make_uid(d), d) for d in docs]
+        current_uids = set([uid for uid, _ in cur_pairs])
+
+        # Xoá “stale” (những uid đang có trong DB nhưng không còn xuất hiện ở lần ingest này)
+        stale = list(db_uids - current_uids)
+        if stale:
+            client.table(table).delete().in_("uid", stale).execute()
+            total_delete += len(stale)
+
+        # Chỉ embed + upsert những cái mới
+        new_pairs = [(uid, d) for uid, d in cur_pairs if uid not in db_uids]
+        if not new_pairs:
+            continue
+
+        content = [d.page_content for _, d in new_pairs]
+        vectors = embeds.embed_documents(content)
+
+        rows = []
+        for (uid, d), vec in zip(new_pairs, vectors):
+            rows.append({
+                "uid": uid,
+                "content": sanitize_text(d.page_content),
+                "metadata": d.metadata,
+                "embedding": vec
+            })
+
+        # Upsert theo batch để tránh payload quá lớn
+        BATCH_SIZE = 128
+        for i in range(0, len(rows), BATCH_SIZE):
+            client.table(table).upsert(
+                rows[i:i + BATCH_SIZE],
+                on_conflict="uid"
+            ).execute()
+
+        total_new += len(new_pairs)
+
+    return total_new, total_delete
+```
+* Tạo RPC (Remote Procedure Call) trong Supabase để reset từ code:
+```sql
+create or replace function reset_documents()
+returns void
+language plpgsql
+security definer -- đây là tùy chọn an ninh thiết lập rằng hàm sẽ chạy với quyền của người tạo hàm chứ không phải người gọi
+as $$
+begin
+    truncate table documents restart identity;
+end;
+$$;
+```
+* Chỉnh tương ứng với file ingest_corpus.py:
+```python
+def handle(self, *args, **opts):
+    if opts["reset"]:
+        self.stdout.write("Xoá index cũ...")
+        client = get_supabase_client()
+        # table = get_supabase_table_name()
+        # client.table(table).delete().neq("uid", None).execute()
+        # self.stdout.write(self.style.WARNING(f"Đã reset bảng Supabase: {table}"))
+        # gọi RPC thay vì delete()
+        client.rpc("reset_documents").execute()
+        self.stdout.write(self.style.SUCCESS("Đã TRUNCATE + RESTART IDENTITY cho bảng documents."))
+
+    t0 = time.time()
+    stats = ingest_corpus()
+    dt = time.time() - t0
+
+    self.stdout.write(self.style.SUCCESS(
+        f"INGEST DONE in {dt:.2f}s | files={stats['files']} "
+        f"chunks={stats['chunks']} added={stats['added']} deleted={stats['deleted']}\n"
+        f"corpus={stats['corpus_dir']} "
+        # f"| chroma={stats['chroma_dir']} | collection={stats['collection']}"
+    ))
 ```
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”

@@ -1,29 +1,29 @@
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 
-from copilot.llm import _env
+from copilot.llm import env
 
 
 class ProviderError(RuntimeError):
     ...
 
 def get_chat(model: str | None, temperature: float = 0.0):
-    provider = _env("LLM_PROVIDER", "ollama").lower()
-    model = _env("LLM_MODEL", "llama3.1:8b").lower()
+    provider = env("LLM_PROVIDER", "ollama").lower()
+    model = env("LLM_MODEL", "llama3.1:8b").lower()
     print(f"[LLM] Provider={provider}, Model={model}, Temp={temperature}")
 
     if provider == "ollama":
         return ChatOllama(model=model, temperature=temperature)
 
     if provider == "openrouter":
-        api_key = _env("OPENROUTER_API_KEY")
+        api_key = env("OPENROUTER_API_KEY")
         if not api_key:
             raise ProviderError("Thiếu OPENROUTER_API_KEY trong .env")
 
-        base_url = _env("OPENROUTER_BASE_URL")
+        base_url = env("OPENROUTER_BASE_URL")
         headers = {
-            "HTTP-Referer": _env("OPENROUTER_HTTP_REFERER", "http://localhost"),
-            "X-Title": _env("OPENROUTER_APP_TITLE", "fengshui-copilot-dev"),
+            "HTTP-Referer": env("OPENROUTER_HTTP_REFERER", "http://localhost"),
+            "X-Title": env("OPENROUTER_APP_TITLE", "fengshui-copilot-dev"),
         }
 
         return ChatOpenAI(
@@ -35,7 +35,7 @@ def get_chat(model: str | None, temperature: float = 0.0):
         )
 
     if provider == "openai":
-        api_key = _env("OPENAI_API_KEY")
+        api_key = env("OPENAI_API_KEY")
         if not api_key:
             raise ProviderError("Thiếu OPENAI_API_KEY trong .env")
 

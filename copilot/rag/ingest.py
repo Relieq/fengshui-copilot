@@ -1,8 +1,9 @@
 import hashlib
 import re
 import shutil
+from collections import defaultdict
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Tuple
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
@@ -12,8 +13,22 @@ from pypdf import PdfReader
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_community.document_loaders import PyPDFLoader
 
+from copilot.llm.embeddings import get_embeddings
 from copilot.rag.settings import CHUNK_SIZE, CHUNK_OVERLAP, ensure_dirs, CHROMA_DIR, EMBEDDING_MODEL, COLLECTION_NAME, \
     CORPUS_DIR
+from copilot.rag.supa import *
+
+
+_CONTROL_BAD = re.compile(r'[\x00-\x08\x0B\x0C\x0E-\x1F]')  # giữ \t \n \r
+
+
+# Vệ sinh, loại bỏ control char không mong muốn
+def sanitize_text(s: str) -> str:
+    if not s:
+        return ""
+    # chuẩn hoá xuống 1 khoảng trắng với control char; strip cho gọn
+    s = _CONTROL_BAD.sub(" ", s)
+    return s.strip()
 
 
 def _load_text_file(path: Path) -> str:
@@ -56,6 +71,7 @@ def load_corpus(corpus_dir: Path) -> List[Document]:
 
     return docs
 
+
 def chunk_documents(docs: List[Document]) -> List[Document]:
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP,
@@ -63,53 +79,126 @@ def chunk_documents(docs: List[Document]) -> List[Document]:
     )
     return splitter.split_documents(docs)
 
-def _make_id(doc: Document) -> str:
+
+def _make_uid(doc: Document) -> str:
     src = doc.metadata.get("source", "")
-    start = doc.metadata.get("start_index", None)
+    start = doc.metadata.get("start_index", 0)
     return f"{src}::{start}"
 
-def build_or_update_chroma(chunks: List[Document], reset: bool = False) -> int:
-    ensure_dirs()
 
-    if reset and CHROMA_DIR.exists():
-        shutil.rmtree(CHROMA_DIR)
+def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
+    """
+    Idempotent ingest:
+    - Với mỗi source: lấy danh sách uid đang có trong DB.
+    - Tạo uid hiện tại từ chunks.
+      * new = current_uids - db_uids  -> chỉ embed + upsert cho phần này.
+      * stale = db_uids - current_uids -> delete để làm sạch.
+    - Không kiểm tra nội dung thay đổi (không checksum).
+    """
+    embeds = get_embeddings()
+    client = get_supabase_client()
+    table = get_supabase_table_name()
 
-    embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
+    # Kiểm tra metadata "source", "start_index"
+    # for doc in chunks:
+    #     print(f"[INGEST] {doc.metadata.get('source', '')} (start={doc.metadata.get('start_index', 0)})")
 
-    # Chroma vector store
-    vs = Chroma(
-        collection_name=COLLECTION_NAME,
-        embedding_function=embeddings,
-        persist_directory=str(CHROMA_DIR)
-    )
-
-    # Tạo id ổn định để tránh trùng lặp nếu ingest nhiều lần
-    seen = set()
-    docs_unique, ids_unique = [], []
+    by_src: Dict[str, List[Document]] = defaultdict(list)
     for doc in chunks:
-        _id = _make_id(doc)
-        if _id in seen:
+        by_src[doc.metadata.get("source", "")].append(doc)
+
+    # Kiểm tra các nguồn
+    print(by_src.keys())
+
+    total_new, total_delete = 0, 0
+
+    for src, docs in by_src.items():
+        res = client.table(table).select("uid").contains("metadata", {"source": src}).execute()
+        db_uids = set([row["uid"] for row in (res.data or [])])
+
+        cur_pairs = [(_make_uid(d), d) for d in docs]
+        current_uids = set([uid for uid, _ in cur_pairs])
+
+        # Xoá “stale” (những uid đang có trong DB nhưng không còn xuất hiện ở lần ingest này)
+        stale = list(db_uids - current_uids)
+        if stale:
+            client.table(table).delete().in_("uid", stale).execute()
+            total_delete += len(stale)
+
+        # Chỉ embed + upsert những cái mới
+        new_pairs = [(uid, d) for uid, d in cur_pairs if uid not in db_uids]
+        if not new_pairs:
             continue
-        seen.add(_id)
-        docs_unique.append(doc)
-        ids_unique.append(_id)
 
-    # Chroma "add" sẽ bỏ qua id đã tồn tại (từ v0.5), an toàn khi ingest lại
-    vs.add_documents(docs_unique, ids=ids_unique)
+        content = [d.page_content for _, d in new_pairs]
+        vectors = embeds.embed_documents(content)
 
-    return len(ids_unique)
+        rows = []
+        for (uid, d), vec in zip(new_pairs, vectors):
+            rows.append({
+                "uid": uid,
+                "content": sanitize_text(d.page_content),
+                "metadata": d.metadata,
+                "embedding": vec
+            })
 
-def ingest_corpus(reset: bool = False) -> dict:
+        # Upsert theo batch để tránh payload quá lớn
+        BATCH_SIZE = 128
+        for i in range(0, len(rows), BATCH_SIZE):
+            client.table(table).upsert(
+                rows[i:i + BATCH_SIZE],
+                on_conflict="uid"
+            ).execute()
+
+        total_new += len(new_pairs)
+
+    return total_new, total_delete
+
+
+    # ensure_dirs()
+    #
+    # if reset and CHROMA_DIR.exists():
+    #     shutil.rmtree(CHROMA_DIR)
+
+    # embeddings = OllamaEmbeddings(model=EMBEDDING_MODEL)
+    #
+    # # Chroma vector store
+    # vs = Chroma(
+    #     collection_name=COLLECTION_NAME,
+    #     embedding_function=embeddings,
+    #     persist_directory=str(CHROMA_DIR)
+    # )
+    #
+    # # Tạo id ổn định để tránh trùng lặp nếu ingest nhiều lần
+    # seen = set()
+    # docs_unique, ids_unique = [], []
+    # for doc in chunks:
+    #     _id = _make_uid(doc)
+    #     if _id in seen:
+    #         continue
+    #     seen.add(_id)
+    #     docs_unique.append(doc)
+    #     ids_unique.append(_id)
+    #
+    # # Chroma "add" sẽ bỏ qua id đã tồn tại (từ v0.5), an toàn khi ingest lại
+    # vs.add_documents(docs_unique, ids=ids_unique)
+    #
+    # return len(ids_unique)
+
+
+def ingest_corpus() -> dict:
     ensure_dirs()
     docs = load_corpus(CORPUS_DIR)
     chunks = chunk_documents(docs)
-    n = build_or_update_supabase(chunks)
+    # n = build_or_update_supabase(chunks)
+    total_new, total_delete = ingest_to_supabase(chunks)
 
     return {
         "files": len(docs),
         "chunks": len(chunks),
-        "added": n,
+        "added": total_new,
+        "deleted": total_delete,
         "corpus_dir": str(CORPUS_DIR),
-        "chroma_dir": str(CHROMA_DIR),
-        "collection": COLLECTION_NAME,
+        # "chroma_dir": str(CHROMA_DIR),
+        # "collection": COLLECTION_NAME,
     }

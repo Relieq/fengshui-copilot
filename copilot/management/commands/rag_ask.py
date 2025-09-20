@@ -9,13 +9,18 @@ from copilot.rag.settings import TOP_K, LLM_MODEL
 
 ANSWER_PROMPT = ChatPromptTemplate.from_messages([
     ("system",
-     "Bạn là trợ lý phong thuỷ. Trả lời ngắn gọn, dựa trên ngữ cảnh được cung cấp."
-     " Nếu ngữ cảnh không đủ, hãy nói 'Tôi không chắc từ tài liệu hiện có.'"),
+     "Bạn là chuyên gia phong thủy. Chỉ sử dụng thông tin trong NGỮ CẢNH và các quy tắc cơ bản, tránh bịa đặt. "
+     "Nếu ngữ cảnh không đủ để trả lời, hãy nói 'Tôi không chắc từ tài liệu hiện có.'"),
     ("human",
      "Câu hỏi: {question}\n\n"
-     "Ngữ cảnh (có thể rút gọn):\n{context}\n\n"
-     "Yêu cầu:\n- Trả lời 2–4 câu tiếng Việt, bám sát ngữ cảnh.\n"
-     "- Liệt kê nguồn (tên file) đã dùng ở cuối câu trả lời.")
+     "NGỮ CẢNH (có thể rút gọn, có thể gồm nhiều đoạn từ các nguồn khác nhau):\n{context}\n\n"
+     "YÊU CẦU TRẢ LỜI:\n"
+     "1) Nếu câu hỏi là 'vì sao/tại sao/how', hãy trình bày theo cấu trúc: "
+     "- Lý do (dựa vào quy tắc ngũ hành/âm dương xuất hiện trong ngữ cảnh) → "
+     "- Ví dụ áp dụng (nếu liên quan bếp: bếp lò/bếp ga = Hỏa; bồn rửa/nước sinh hoạt = Thủy) → "
+     "- Kết luận ngắn gọn.\n"
+     "2) Nếu không phải câu hỏi 'vì sao', trả lời 2–4 câu ngắn gọn, bám sát ngữ cảnh.\n"
+     "3) Luôn ghi 'Nguồn: <tên file, ...>' ở cuối.\n")
 ])
 
 class Command(BaseCommand):

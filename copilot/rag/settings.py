@@ -20,4 +20,4 @@ LLM_MODEL = os.getenv("LLM_MODEL")
 # Đảm bảo thư mục tồn tại
 def ensure_dirs():
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
-    CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+    # CHROMA_DIR.mkdir(parents=True, exist_ok=True)
