@@ -10,7 +10,10 @@ from copilot.rag.settings import TOP_K, LLM_MODEL
 ANSWER_PROMPT = ChatPromptTemplate.from_messages([
     ("system",
      "Bạn là chuyên gia phong thủy. Chỉ sử dụng thông tin trong NGỮ CẢNH và các quy tắc cơ bản, tránh bịa đặt. "
-     "Nếu ngữ cảnh không đủ để trả lời, hãy nói 'Tôi không chắc từ tài liệu hiện có.'"),
+     "Nếu ngữ cảnh không đủ để trả lời, hãy nói 'Tôi không chắc từ tài liệu hiện có.'"
+     "Tuy vậy cũng đừng nên quá thận trọng, vì ngữ cảnh có thể bị lỗi font (bạn có thể tự lập luận để phục hồi rồi phản "
+     "hồi lại cho người dùng, một số lại cần phải suy luận, liên hệ tính tương đồng để đưa ra câu trả lời hợp lý nhất, nhưng "
+     "hiển nhiên vẫn phải tuân thủ trong phạm vi NGỮ CẢNH."),
     ("human",
      "Câu hỏi: {question}\n\n"
      "NGỮ CẢNH (có thể rút gọn, có thể gồm nhiều đoạn từ các nguồn khác nhau):\n{context}\n\n"
@@ -43,7 +46,7 @@ class Command(BaseCommand):
 
         # Lấy ngữ cảnh
         retriever = get_retriever(k)
-        docs = retriever.get_relevant_documents(q)
+        docs = retriever.invoke(q)
 
         # Ghép đoạn trích tài liệu + nguồn để tạo ngữ cảnh
         ctx_lines = []
@@ -52,8 +55,8 @@ class Command(BaseCommand):
         for i, d in enumerate(docs):
             snippet = d.page_content.strip().replace("\n", " ")
 
-            if len(snippet) > 500:
-                snippet = snippet[:500] + "..."
+            # if len(snippet) > 500:
+            #     snippet = snippet[:500] + "..."
 
             src = d.metadata.get("source", "")
             used_files.add(src)
@@ -62,7 +65,7 @@ class Command(BaseCommand):
 
         context = "\n\n".join(ctx_lines) if ctx_lines else "(Không có ngữ cảnh)"
 
-        llm = get_chat(model, temperature=temp)
+        llm = get_chat(temperature=temp)
         chain = ANSWER_PROMPT | llm
 
         t0 = time.time()

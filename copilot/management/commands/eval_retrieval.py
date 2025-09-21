@@ -41,7 +41,7 @@ class Command(BaseCommand):
         for i, item in enumerate(data):
             q = item["q"]
             gold = item.get("sources", "")
-            docs = retriever.get_relevant_documents(q)
+            docs = retriever.invoke(q)
 
             ranked_src = [d.metadata.get("source", "") for d in docs]
             hit = any(r in gold for r in ranked_src)

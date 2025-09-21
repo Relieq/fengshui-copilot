@@ -418,7 +418,7 @@ class Command(BaseCommand):
 
         # Lấy ngữ cảnh
         retriever = get_retriever(k)
-        docs = retriever.get_relevant_documents(q)
+        docs = retriever.invoke(q)
 
         # Ghép đoạn trích tài liệu + nguồn để tạo ngữ cảnh
         ctx_lines = []
@@ -427,8 +427,8 @@ class Command(BaseCommand):
         for i, d in enumerate(docs):
             snippet = d.page_content.strip().replace("\n", " ")
 
-            if len(snippet) > 500:
-                snippet = snippet[:500] + "..."
+            # if len(snippet) > 500:
+            #     snippet = snippet[:500] + "..."
 
             src = d.metadata.get("source", "")
             used_files.add(src)
@@ -561,7 +561,7 @@ class Command(BaseCommand):
         for i, item in enumerate(data):
             q = item["q"]
             gold = item.get("sources", "")
-            docs = retriever.get_relevant_documents(q)
+            docs = retriever.invoke(q)
 
             ranked_src = [d.metadata.get("source", "") for d in docs]
             hit = any(r in gold for r in ranked_src)
@@ -673,15 +673,15 @@ class Command(BaseCommand):
             q = item["q"]
             ref = item.get("ref", "").strip()
 
-            docs = retriever.get_relevant_documents(q)
+            docs = retriever.invoke(q)
 
             ctx_lines = []
 
             for j, d in enumerate(docs):
                 snippet = d.page_content.strip().replace("\n", " ")
 
-                if len(snippet) > 500:
-                    snippet = snippet[:500] + "..."
+                # if len(snippet) > 500:
+                #     snippet = snippet[:500] + "..."
                 src = d.metadata.get("source", "")
                 ctx_lines.append(f"[{j + 1}] {snippet} (SOURCE: {src})")
 
@@ -786,6 +786,8 @@ Thực hành — Bật switch Ollama/OpenRouter
 pip install -U langchain-openai openai langchain-ollama
 
 2) Cập nhật .env
+* Chú ý: sonoma-sky-alpha (OpenRouter) tôi dùng lúc này chỉ miễn phí trong thời gian nhất định, các bạn có thể tự tìm 
+kiếm model khác phù hợp.
 ```
 # Chọn 1:
 LLM_PROVIDER=ollama
@@ -812,7 +814,7 @@ Chỉ thêm 1 file nhỏ để tránh lặp code; không đụng gì tới RAG.
 # copilot/llm/provider.py
 class ProviderError(RuntimeError): ...
 
-def get_chat(model: Optional[str] = None, temperature: float = 0.0):
+def get_chat(temperature: float = 0.0):
     """
     Trả về Chat model đã cấu hình theo .env:
       - LLM_PROVIDER=ollama -> ChatOllama(model)
@@ -857,24 +859,24 @@ copilot/management/commands/structured_qa.py
 + from ...llm.provider import get_chat
 ...
 - llm = ChatOllama(model=model, temperature=temp)
-+ llm = get_chat(model=model, temperature=temp)
++ llm = get_chat(temperature=temp)
 
 copilot/management/commands/rag_ask.py
 - from langchain_ollama import ChatOllama
 + from ...llm.provider import get_chat
 ...
 - llm = ChatOllama(model=model, temperature=temp)
-+ llm = get_chat(model=model, temperature=temp)
++ llm = get_chat(temperature=temp)
 
 copilot/management/commands/eval_answer.py
 - from langchain_ollama import ChatOllama
 + from ...llm.provider import get_chat
 ...
 - llm = ChatOllama(model=model, temperature=0)
-+ llm = get_chat(model=model, temperature=0)
++ llm = get_chat(temperature=0)
 ...
 - judge_raw = (JUDGE_PROMPT | llm).invoke(...)
-+ judge_raw = (JUDGE_PROMPT | get_chat(model=model, temperature=0)).invoke(...)
++ judge_raw = (JUDGE_PROMPT | get_chat(temperature=0)).invoke(...)
 ```
 
 Lưu ý: không đụng Bài 3 (ingest/retriever) — embeddings vẫn là OllamaEmbeddings(nomic-embed-text).
@@ -917,14 +919,15 @@ create table if not exists documents (
 
 -- Tìm kiếm consine (trả similarity 0..1)
 create or replace function match_documents(
-    query_embedding vector(1024), -- embedding câu hỏi của người dùng
-    match_count int, -- top-k
-    filter jsonb default '{}'::jsonb -- bộ lọc metadata, ví dụ {"source": "file.pdf"} để chỉ tìm trong file.pdf
+    filter jsonb default '{}'::jsonb, -- bộ lọc metadata, ví dụ {"source": "file.pdf"} để chỉ tìm trong file.pdf
+    match_count int default 4, -- top-k
+    query_embedding vector(1024) default NULL -- embedding câu hỏi của người dùng
 ) returns table (
     id bigint,
     uid text,
     content text,
     metadata jsonb,
+    embedding vector(1024),        -- <— QUAN TRỌNG: trả về vector dùng cho MMR
     similarity double precision
 ) language sql stable as $$ -- hàm viết bằng SQL thuần (không PL/pgSQL) 
     -- "stable" nghĩa là kết quả không thay đổi nếu input giống (tối ưu cache)
@@ -933,9 +936,10 @@ create or replace function match_documents(
         d.uid,
         d.content,
         d.metadata,
+        d.embedding,
         1 - (d.embedding <=> query_embedding) as similarity -- cosine simlarity (1 - distance), 0..2
     from documents as d
-    where documents @> filter -- @>: contains
+    where d.metadata @> filter -- @>: contains
     order by d.embedding <=> query_embedding -- toán tử pgvector cho consine distance
     limit match_count;
 $$;
@@ -1146,6 +1150,16 @@ def handle(self, *args, **opts):
         f"corpus={stats['corpus_dir']} "
         # f"| chroma={stats['chroma_dir']} | collection={stats['collection']}"
     ))
+```
+**Test thử:**
+```bash
+python manage.py ingest_corpus --reset
+python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?"
+```
+* Chạy lại lệnh eval_retrieval/eval_answer để xem kết quả thế nào.
+```bash
+python manage.py eval_retrieval
+python manage.py eval_answer --judge
 ```
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”

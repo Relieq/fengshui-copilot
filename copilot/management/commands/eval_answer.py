@@ -75,7 +75,7 @@ class Command(BaseCommand):
             raise CommandError(f"Eval set rỗng: {eval_path}")
 
         retriever = get_retriever(k)
-        llm = get_chat(model=model)
+        llm = get_chat()
 
         f1s, judge_scores = [], []
         t0 = time.time()
@@ -84,15 +84,15 @@ class Command(BaseCommand):
             q = item["q"]
             ref = item.get("ref", "").strip()
 
-            docs = retriever.get_relevant_documents(q)
+            docs = retriever.invoke(q)
 
             ctx_lines = []
 
             for j, d in enumerate(docs):
                 snippet = d.page_content.strip().replace("\n", " ")
 
-                if len(snippet) > 500:
-                    snippet = snippet[:500] + "..."
+                # if len(snippet) > 500:
+                #     snippet = snippet[:500] + "..."
                 src = d.metadata.get("source", "")
                 ctx_lines.append(f"[{j + 1}] {snippet} (SOURCE: {src})")
 
