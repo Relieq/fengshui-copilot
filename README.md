@@ -455,10 +455,6 @@ class Command(BaseCommand):
 ```
 * Test thử:
 * Chạy lệnh ingest_corpus: `python manage.py ingest_corpus` hoặc `python manage.py ingest_corpus --reset` để xóa index cũ.
-Output:
-```
-
-```
 * Chạy lệnh rag_ask:
 
 Mọi người có thể xóa index trong \chroma xem trước kết quả như nào, sau đó hẵng ingest lại dữ liệu để thấy hiệu quả.
@@ -780,7 +776,8 @@ Phần này nếu máy ai không đủ tài nguyên có thể xóa bớt nội d
 * Giải pháp: tạo một factory nhỏ get_chat(...) trả về model đã cấu hình sẵn dựa trên .env. Mọi lệnh chỉ from ... import get_chat và dùng.
 * Lợi ích: DRY, đổi provider bằng sửa .env, không chạm code nghiệp vụ (RAG/graph giữ nguyên).
 * Phạm vi: chỉ Chat model cho sinh câu trả lời/chấm điểm. Embeddings & Chroma vẫn dùng Ollama như Bài 3 (không đổi).
-
+* Bạn có thể xem thống kê sử dụng trong trang activity của OpenRouter (nếu dùng OpenRouter làm provider).
+![Xem thống kê sử dụng trong trang activity của OpenRouter](images/activity_dashboard_in_openrouter.jpeg)
 Thực hành — Bật switch Ollama/OpenRouter
 1) Cài gói (nếu chưa)
 pip install -U langchain-openai openai langchain-ollama
@@ -903,6 +900,7 @@ chúng ta làm theo hướng production → Supabase được khuyến nghị l�
 * Ở bước này bạn hãy tạo một project Supabase fengshui-copilot tại https://supabase.com/ (nếu chưa có).
 * Sau đó trong Supabase dashboard → SQL Editor → Chọn Quickstarts "Langchain" ở mục Community, lúc đó một đoạn SQL query 
 được tạo ra nhằm tạo bảng và function cần thiết cho LangChain SupabaseVectorStore.
+![Quickstarts trong Supabase](images/quickstarts_supabase.jpeg)
 * Chúng ta sẽ chỉnh sửa lại đoạn query này một chút:
 ```sql
 -- Bật pgvector extension (nếu chưa)
@@ -1045,6 +1043,16 @@ def get_retriever(top_k: int | None = None):
         search_kwargs={"k": top_k, "fetch_k": max(20, 5 * top_k)}
     )
 ```
+* Tạo thêm hàm sanitize_text() để làm sạch text (bỏ ký tự không in được):
+```python
+# Vệ sinh, loại bỏ control char không mong muốn
+def sanitize_text(s: str) -> str:
+    if not s:
+        return ""
+    # chuẩn hoá xuống 1 khoảng trắng với control char; strip cho gọn
+    s = _CONTROL_BAD.sub(" ", s)
+    return s.strip()
+```
 * Chỉnh ingest thành theo batch:
 ```python
 def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
@@ -1127,6 +1135,8 @@ begin
 end;
 $$;
 ```
+* Bạn có thể xem các hàm hiện có trong Database → Functions.
+![function_supabase.jpeg](images/function_supabase.jpeg)
 * Chỉnh tương ứng với file ingest_corpus.py:
 ```python
 def handle(self, *args, **opts):
@@ -1158,9 +1168,17 @@ python manage.py rag_ask --q "Nhà hướng Đông Nam hợp mệnh nào?"
 ```
 * Chạy lại lệnh eval_retrieval/eval_answer để xem kết quả thế nào.
 ```bash
-python manage.py eval_retrieval
-python manage.py eval_answer --judge
+python manage.py eval_retrieval --k 6
+python manage.py eval_answer --judge --k 6
 ```
+* Kết quả nhận được: Recall@6: 0.653 | MRR@6: 0.501 101 câu.
+* Ở đây, chúng ta có thể thấy rằng, đúng là hiện tại việc ingest, retrieval đã nhẹ hơn rất nhiều, tuy nhiên vấn đề về chất 
+lượng truy vấn vẫn KÉM.
+* Tại sao? Các bạn có thể vào xem thử bảng documents trong Supabase để thấy rằng, nội dung mục content có nhiều chỗ bị 
+lỗi font như vốn là "Ngũ hành" lại trở thành "Ngũ h{nh". Đây là lỗi phổ biến khi xử lý văn bản tiếng Việt, đặc biệt là từ các file PDF hoặc tài liệu được mã hóa không 
+đúng (tương tự vấn đề control char đã xử lí lúc trước).
+![vietnamese_text_problem.jpeg](images/vietnamese_text_problem.jpeg)
+* 
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
 ## Khái niệm căn bản LangGraph

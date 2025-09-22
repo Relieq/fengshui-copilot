@@ -10,6 +10,7 @@ ollama>=0.5.3
 chromadb>=1.0.20
 langgraph>=0.6.7
 python-dotenv>=1.1.1
+unstructured[pdf]
 pypdf>=6.0.0
 pymupdf~=1.26.4
 langchain-community>=0.3.29

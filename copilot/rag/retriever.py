@@ -22,7 +22,7 @@ def get_retriever(top_k: int | None = TOP_K):
     vs = get_vectorstore()
 
     return vs.as_retriever(
-        # search_type="mmr",
-        # search_kwargs={"k": top_k, "fetch_k": max(20, 5 * top_k)}
-        search_kwargs={"k": top_k}
+        search_type="mmr",
+        search_kwargs={"k": top_k, "fetch_k": max(20, 5 * top_k)}
+        # search_kwargs={"k": top_k}
     )

@@ -35,6 +35,7 @@ def _load_text_file(path: Path) -> str:
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
         return f.read()
 
+
 def _load_pdf_file(path: Path) -> str:
     try:
         docs = PyMuPDFLoader(str(path)).load()

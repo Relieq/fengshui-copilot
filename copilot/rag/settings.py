@@ -11,7 +11,7 @@ COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "fengshui")
 # Tham số split & retrieve
 CHUNK_SIZE = int(os.getenv("RAG_CHUNK_SIZE", 800))
 CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 120))
-TOP_K = int(os.getenv("RAG_TOP_K", 4))
+TOP_K = int(os.getenv("RAG_TOP_K", 6))
 
 # Model
 EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL")
