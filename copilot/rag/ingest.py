@@ -36,13 +36,26 @@ def _load_text_file(path: Path) -> str:
         return f.read()
 
 
+def decode_pdf_text(s: str) -> str:
+    if not s:
+        return ""
+    s = (s.replace("{", "à").replace("}", "â")
+         .replace("~", "ã").replace("|", "á"))
+    return s
+
+
 def _load_pdf_file(path: Path) -> str:
     try:
         docs = PyMuPDFLoader(str(path)).load()
+        # Nếu tên file là "fengshui_phong_thuy_toan_tap.pdf" thì decode
+        if path.name == "fengshui_phong_thuy_toan_tap.pdf": # lỗi mỗi file này
+            return decode_pdf_text("\n".join(d.page_content for d in docs))
         return "\n".join(d.page_content for d in docs)
     except Exception:
         # Fallback: PyPDFLoader nếu PyMuPDF lỗi
         docs = PyPDFLoader(str(path)).load()
+        if path.name == "fengshui_phong_thuy_toan_tap.pdf":
+            return decode_pdf_text("\n".join(d.page_content for d in docs))
         return "\n".join(d.page_content for d in docs)
 
 
@@ -114,6 +127,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
     total_new, total_delete = 0, 0
 
     for src, docs in by_src.items():
+        print(f"[INGEST] Processing source: {src} ({len(docs)} chunks)")
         res = client.table(table).select("uid").contains("metadata", {"source": src}).execute()
         db_uids = set([row["uid"] for row in (res.data or [])])
 
@@ -131,8 +145,11 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
         if not new_pairs:
             continue
 
+        print(f"[INGEST] stale={len(stale)} new={len(new_pairs)}")
+
         content = [d.page_content for _, d in new_pairs]
         vectors = embeds.embed_documents(content)
+        print("[INGEST] Vectors computed.")
 
         rows = []
         for (uid, d), vec in zip(new_pairs, vectors):
@@ -143,6 +160,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
                 "embedding": vec
             })
 
+        print("[INGEST] Upserting to Supabase...")
         # Upsert theo batch để tránh payload quá lớn
         BATCH_SIZE = 128
         for i in range(0, len(rows), BATCH_SIZE):
@@ -152,6 +170,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
             ).execute()
 
         total_new += len(new_pairs)
+        print(f"[INGEST] Done source: {src}")
 
     return total_new, total_delete
 
@@ -189,7 +208,9 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
 
 def ingest_corpus() -> dict:
     ensure_dirs()
+    print(f"[LOAD] Loading corpus from {CORPUS_DIR}")
     docs = load_corpus(CORPUS_DIR)
+    print("[CHUNK] Splitting into chunks...")
     chunks = chunk_documents(docs)
     # n = build_or_update_supabase(chunks)
     total_new, total_delete = ingest_to_supabase(chunks)

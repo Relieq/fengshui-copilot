@@ -1172,13 +1172,22 @@ python manage.py eval_retrieval --k 6
 python manage.py eval_answer --judge --k 6
 ```
 * Kết quả nhận được: Recall@6: 0.653 | MRR@6: 0.501 101 câu.
-* Ở đây, chúng ta có thể thấy rằng, đúng là hiện tại việc ingest, retrieval đã nhẹ hơn rất nhiều, tuy nhiên vấn đề về chất 
-lượng truy vấn vẫn KÉM.
-* Tại sao? Các bạn có thể vào xem thử bảng documents trong Supabase để thấy rằng, nội dung mục content có nhiều chỗ bị 
-lỗi font như vốn là "Ngũ hành" lại trở thành "Ngũ h{nh". Đây là lỗi phổ biến khi xử lý văn bản tiếng Việt, đặc biệt là từ các file PDF hoặc tài liệu được mã hóa không 
-đúng (tương tự vấn đề control char đã xử lí lúc trước).
+* Chú ý, ở đây, chúng ta có thể thấy rằng, đúng là hiện tại việc ingest, retrieval đã nhẹ hơn rất nhiều, tuy nhiên vấn đề về chất 
+lượng truy vấn vẫn "kém" - này đơn thuần là do tài liệu vốn có của tôi bị mã hóa ở một số chỗ (các bạn có thể vào tại liệu 
+copy trực tiếp thử) thành ra khiến cho retriever không tìm đúng được nội dung cần thiết.
+* Các bạn có thể vào xem thử bảng documents trong Supabase để thấy rằng, nội dung mục content có nhiều chỗ bị 
+lỗi font như vốn là "Ngũ hành" lại trở thành "Ngũ h{nh".
 ![vietnamese_text_problem.jpeg](images/vietnamese_text_problem.jpeg)
-* 
+* Các bạn có thể tự tìm kiếm tài liệu phong thủy bổ sung để có thể kiểm tra rõ hơn chất lượng hệ thống RAG của mình (tôi 
+thì xem kĩ trong file mã hóa khá đơn điệu nên tạo hàm decode đơn giản thôi)
+```python
+def decode_pdf_text(s: str) -> str:
+    if not s:
+        return ""
+    s = (s.replace("{", "à").replace("}", "â")
+         .replace("~", "ã").replace("|", "á"))
+    return s
+```
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
 ## Khái niệm căn bản LangGraph
