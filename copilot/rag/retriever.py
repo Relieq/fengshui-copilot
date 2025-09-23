@@ -11,11 +11,11 @@ from copilot.rag.supa import *
 
 
 def get_vectorstore():
-    client = get_supabase_client()
+    supa_client = get_supabase_client()
     embeddings = get_embeddings()
     table = get_supabase_table_name()
     query = get_supabase_query_name()
-    return SupabaseVectorStore(client=client, embedding=embeddings, table_name=table, query_name=query)
+    return SupabaseVectorStore(client=supa_client, embedding=embeddings, table_name=table, query_name=query)
 
 
 def get_retriever(top_k: int | None = TOP_K):

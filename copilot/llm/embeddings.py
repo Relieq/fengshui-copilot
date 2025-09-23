@@ -1,8 +1,6 @@
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_huggingface import HuggingFaceEndpointEmbeddings
 from langchain_ollama import OllamaEmbeddings
-from mpmath.libmp import normalize
-from openai import max_retries
 
 from copilot.llm import env
 

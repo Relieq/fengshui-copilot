@@ -110,7 +110,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
     - Không kiểm tra nội dung thay đổi (không checksum).
     """
     embeds = get_embeddings()
-    client = get_supabase_client()
+    supa_client = get_supabase_client()
     table = get_supabase_table_name()
 
     # Kiểm tra metadata "source", "start_index"
@@ -128,7 +128,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
 
     for src, docs in by_src.items():
         print(f"[INGEST] Processing source: {src} ({len(docs)} chunks)")
-        res = client.table(table).select("uid").contains("metadata", {"source": src}).execute()
+        res = supa_client.table(table).select("uid").contains("metadata", {"source": src}).execute()
         db_uids = set([row["uid"] for row in (res.data or [])])
 
         cur_pairs = [(_make_uid(d), d) for d in docs]
@@ -137,7 +137,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
         # Xoá “stale” (những uid đang có trong DB nhưng không còn xuất hiện ở lần ingest này)
         stale = list(db_uids - current_uids)
         if stale:
-            client.table(table).delete().in_("uid", stale).execute()
+            supa_client.table(table).delete().in_("uid", stale).execute()
             total_delete += len(stale)
 
         # Chỉ embed + upsert những cái mới
@@ -148,7 +148,16 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
         print(f"[INGEST] stale={len(stale)} new={len(new_pairs)}")
 
         content = [d.page_content for _, d in new_pairs]
-        vectors = embeds.embed_documents(content)
+        print("[INGEST] Computing embeddings...")
+        # vectors = embeds.embed_documents(content)
+        # Chia nội dung ra để embed theo batch tránh lỗi payload quá lớn
+        EMBED_BATCH = 64 # bạn có thể thử điều chỉnh tùy thời điểm
+        vectors = []
+        for i in range(0, len(content), EMBED_BATCH):
+            batch = content[i:i + EMBED_BATCH]
+            vecs = embeds.embed_documents(batch)
+            vectors.extend(vecs)
+
         print("[INGEST] Vectors computed.")
 
         rows = []
@@ -164,13 +173,13 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
         # Upsert theo batch để tránh payload quá lớn
         BATCH_SIZE = 128
         for i in range(0, len(rows), BATCH_SIZE):
-            client.table(table).upsert(
+            supa_client.table(table).upsert(
                 rows[i:i + BATCH_SIZE],
                 on_conflict="uid"
             ).execute()
 
         total_new += len(new_pairs)
-        print(f"[INGEST] Done source: {src}")
+        print(f"[INGEST] Done source: {src}\n")
 
     return total_new, total_delete
 

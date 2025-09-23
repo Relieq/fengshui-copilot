@@ -67,7 +67,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         eval_path = Path(opts["file"])
         k = opts["k"]
-        model = opts["model"]
+        # model = opts["model"]
         use_judge = opts["judge"]
 
         data = list(read_jsonl(eval_path))
@@ -109,6 +109,7 @@ class Command(BaseCommand):
             line = f"[{i+1}] Q: {q}\n REF: {ref}\n PRED: {pred}\n F1: {f1:.3f}"
 
             if use_judge:
+                score = 0.0
                 judge = (JUDGE_PROMPT | llm).invoke({
                     "question": q,
                     "ref": ref,

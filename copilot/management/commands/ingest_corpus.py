@@ -18,12 +18,12 @@ class Command(BaseCommand):
     def handle(self, *args, **opts):
         if opts["reset"]:
             self.stdout.write("Xoá index cũ...")
-            client = get_supabase_client()
+            supa_client = get_supabase_client()
             # table = get_supabase_table_name()
-            # client.table(table).delete().neq("uid", None).execute()
+            # supa_client.table(table).delete().neq("uid", None).execute()
             # self.stdout.write(self.style.WARNING(f"Đã reset bảng Supabase: {table}"))
             # gọi RPC thay vì delete()
-            client.rpc("reset_documents").execute()
+            supa_client.rpc("reset_documents").execute()
             self.stdout.write(self.style.SUCCESS("Đã TRUNCATE + RESTART IDENTITY cho bảng documents."))
 
         t0 = time.time()

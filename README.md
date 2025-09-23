@@ -1029,11 +1029,11 @@ def get_supabase_query_name() -> str:
 * Dùng SupabaseVectorStore + MMR cho retriever.py:
 ```python
 def get_vectorstore():
-    client = get_supabase_client()
+    supa_client = get_supabase_client()
     embeddings = get_embeddings()
     table = os.getenv("SUPABASE_TABLE", "documents")
     query = os.getenv("SUPABASE_QUERY_NAME", "match_documents")
-    return SupabaseVectorStore(client=client, embedding=embeddings, table_name=table, query_name=query)
+    return SupabaseVectorStore(client=supa_client, embedding=embeddings, table_name=table, query_name=query)
 
 def get_retriever(top_k: int | None = None):
     vs = get_vectorstore()
@@ -1065,7 +1065,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
     - Không kiểm tra nội dung thay đổi (không checksum).
     """
     embeds = get_embeddings()
-    client = get_supabase_client()
+    supa_client = get_supabase_client()
     table = get_supabase_table_name()
 
     # Kiểm tra metadata "source", "start_index"
@@ -1082,7 +1082,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
     total_new, total_delete = 0, 0
 
     for src, docs in by_src.items():
-        res = client.table(table).select("uid").contains("metadata", {"source": src}).execute()
+        res = supa_client.table(table).select("uid").contains("metadata", {"source": src}).execute()
         db_uids = set([row["uid"] for row in (res.data or [])])
 
         cur_pairs = [(_make_uid(d), d) for d in docs]
@@ -1091,7 +1091,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
         # Xoá “stale” (những uid đang có trong DB nhưng không còn xuất hiện ở lần ingest này)
         stale = list(db_uids - current_uids)
         if stale:
-            client.table(table).delete().in_("uid", stale).execute()
+            supa_client.table(table).delete().in_("uid", stale).execute()
             total_delete += len(stale)
 
         # Chỉ embed + upsert những cái mới
@@ -1114,7 +1114,7 @@ def ingest_to_supabase(chunks: List[Document]) -> Tuple[int, int]:
         # Upsert theo batch để tránh payload quá lớn
         BATCH_SIZE = 128
         for i in range(0, len(rows), BATCH_SIZE):
-            client.table(table).upsert(
+            supa_client.table(table).upsert(
                 rows[i:i + BATCH_SIZE],
                 on_conflict="uid"
             ).execute()
@@ -1142,12 +1142,12 @@ $$;
 def handle(self, *args, **opts):
     if opts["reset"]:
         self.stdout.write("Xoá index cũ...")
-        client = get_supabase_client()
+        supa_client = get_supabase_client()
         # table = get_supabase_table_name()
-        # client.table(table).delete().neq("uid", None).execute()
+        # supa_client.table(table).delete().neq("uid", None).execute()
         # self.stdout.write(self.style.WARNING(f"Đã reset bảng Supabase: {table}"))
         # gọi RPC thay vì delete()
-        client.rpc("reset_documents").execute()
+        supa_client.rpc("reset_documents").execute()
         self.stdout.write(self.style.SUCCESS("Đã TRUNCATE + RESTART IDENTITY cho bảng documents."))
 
     t0 = time.time()
@@ -1188,11 +1188,38 @@ def decode_pdf_text(s: str) -> str:
          .replace("~", "ã").replace("|", "á"))
     return s
 ```
+* Final result: Điểm eval_retrieval thấp (lỗi tôi khi tập này dùng gpt sinh không tốt) nhưng điểm judge mềm mỏng hơn 
+(chấm bằng LLM) rất tốt. Tôi khuyến nghị nếu có thời gian bạn nên tự tạo thử bộ dữ liệu khác.
 
 # Bài 5: LangGraph – vòng lặp “trả lời → chấm điểm → (nếu kém) truy vấn lại”
-## Khái niệm căn bản LangGraph
 * LangGraph là thư viện để bạn "vẽ" đồ thị trạng thái cho quy trình nhiều bước với LLM:
-  * State: 1 dict chứa các field chúng ta cần
+  * State: 1 dict (hoặc TypedDict) chứa các field chúng ta cần
   * Node: 1 hàm nhận state và trả về phần cập nhật state
   * Edge: đường đi giữa các node, có thể cố định (A → B) hoặc có điều kiện (A → B/C tùy dữ liệu trong state)
   * Loop: dùng cạnh có điều kiện để quay lại 1 node trước đó (ví dụ: chấm điểm thấp → quay lại truy vấn)
+  * Khác với chain thường 1 chiều, graph thì rẽ nhánh / loop được nên hợp tự chấm điểm (judge) và rewrite.
+
+* Mục tiêu: xây dựng mini RAG graph có 5 node:
+  1. retrieve: lấy tài liệu từ supabase
+  2. grade: grade documents - đánh giá và lọc các tài liệu được retrieve
+  3. answer: soạn câu trả lời dựa trên ngữ cảnh (Prompt có cấu trúc Lý do → Ví dụ → Kết luận)
+  4. judge: chấm điểm câu trả lời
+  5. rewrite_query: nếu điểm judge thấp, sửa câu hỏi để truy vấn lại
+* Đồ thị các node:
+```mermaid
+graph TD
+    START --> A[retrieve]
+    A[retrieve] --> B[grade]
+    B --> C[answer]
+    C --> D[judge]
+    D -- retry --> E[rewrite_query]
+    E --> A
+    D -- good --> END
+```
+
+## Các bước thực hiện
+1) Tạo graph: copilot/graph/rag_graph.py
+* Định nghĩa trạng thái của 1 node:
+```python
+
+```
