@@ -1,0 +1,6 @@
+Câu hỏi: {question}
+
+Đoạn:
+{doc}
+
+Đoạn trên có hữu ích để trả lời câu hỏi không? Trả lời 'YES' hoặc 'NO'.

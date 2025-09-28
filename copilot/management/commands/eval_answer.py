@@ -18,6 +18,7 @@ from copilot.rag.settings import DATA_DIR, TOP_K, LLM_MODEL
 def tokenize(s: str) -> list[str]:
     return re.findall(r"[0-9A-Za-zÀ-ỹ]+", (s or "").strip())
 
+
 def f1_score(pred: str, ref: str) -> float:
     p = tokenize(pred)
     r = tokenize(ref)
@@ -35,14 +36,6 @@ def f1_score(pred: str, ref: str) -> float:
     recall = overlap / len(r_set)
     return 2 * (precision * recall) / (precision + recall)
 
-'''ANSWER_PROMPT = ChatPromptTemplate.from_messages([
-    ("system",
-     "Bạn là trợ lý phong thủy. Trả lời ngắn gọn, dựa trên ngữ cảnh cung cấp. "
-     "Nếu ngữ cảnh không đủ, nói 'Tôi không chắc từ tài liệu hiện có.'"),
-    ("human",
-     "Câu hỏi: {question}\n\nNgữ cảnh:\n{context}\n\n"
-     "Yêu cầu: trả lời 2–4 câu tiếng Việt, bám sát ngữ cảnh và tránh bịa đặt.")
-])'''
 
 JUDGE_PROMPT = ChatPromptTemplate.from_messages([
     ("system",
@@ -53,6 +46,7 @@ JUDGE_PROMPT = ChatPromptTemplate.from_messages([
      "Câu hỏi: {question}\nTham chiếu: {ref}\nTrả lời: {pred}\n"
      "Chấm điểm và giải thích ngắn.")
 ])
+
 
 class Command(BaseCommand):
     help = "Đánh giá chất lượng câu trả lời: F1 lexical + (tuỳ chọn) LLM judge mini."
@@ -120,7 +114,7 @@ class Command(BaseCommand):
                 if m:
                     try:
                         score = float(json.loads(m.group(0))["score"])
-                    except Exception:
+                    except RuntimeError:
                         score = 0.0
 
                 judge_scores.append(score)

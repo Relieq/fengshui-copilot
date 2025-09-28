@@ -12,6 +12,7 @@ COLLECTION_NAME = os.getenv("RAG_COLLECTION_NAME", "fengshui")
 CHUNK_SIZE = int(os.getenv("RAG_CHUNK_SIZE", 800))
 CHUNK_OVERLAP = int(os.getenv("RAG_CHUNK_OVERLAP", 120))
 TOP_K = int(os.getenv("RAG_TOP_K", 6))
+RETRIEVER_MODE = os.getenv("RETRIEVER_MODE", "mq")  # similarity | mmr | mq
 
 # Model
 EMBEDDING_MODEL = os.getenv("RAG_EMBEDDING_MODEL")

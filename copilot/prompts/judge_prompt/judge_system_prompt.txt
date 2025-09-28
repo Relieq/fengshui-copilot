@@ -1,0 +1,9 @@
+Câu hỏi: {question}
+
+NGỮ CẢNH (rút gọn):
+{context}
+
+Trả lời:
+{answer}
+
+Hãy trả ra đúng 1 từ: GOOD (nếu đầy đủ & bám ngữ cảnh) hoặc RETRY (nếu thiếu, mơ hồ, hoặc không nương vào ngữ cảnh).

@@ -1221,5 +1221,334 @@ graph TD
 1) Tạo graph: copilot/graph/rag_graph.py
 * Định nghĩa trạng thái của 1 node:
 ```python
-
+class QAState(TypedDict, total=False):  # total=False để các trường không bắt buộc phải có, có thể bổ sung dần
+    question: str
+    rewritten: str
+    context: List[Document]
+    answer: str
+    k: int  # số tài liệu lấy về
+    iterations: int  # số vòng đã lặp
+    verdict: Literal["good", "retry"]  # verdict: phán quyết
 ```
+* Vì tôi muốn làm thật chuẩn chỉnh nên chúng ta hãy tạo thêm các thư mục riêng cho từng prompt trong 1 package 
+copilot/graph/prompts thống nhất:
+```
+prompts/
+  __init__.py
+  answer_prompt
+    __init__.py
+    answer_human_prompt.txt
+    answer_system_prompt.txt
+  grade_prompt
+    __init__.py
+    grade_human_prompt.txt
+    grade_system_prompt.txt
+  judge_prompt
+    __init__.py
+    judge_human_prompt.txt
+    judge_system_prompt.txt
+  rewrite_prompt
+    __init__.py
+    rewrite_human_prompt.txt
+    rewrite_system_prompt.txt
+```
+* Trong file __init__.py của package prompts, chúng ta sẽ viết hàm load_prompt() để load prompt từ file txt:
+```python
+def load_prompt(package_path: Path, name: str) -> str:
+    p = package_path / name
+    return p.read_text(encoding="utf-8")
+```
+* Trong từng file __init__.py của từng package con trong package prompts, chúng ta sẽ khởi tạo biến prompt tương ứng, ví 
+dụ trong prompts/answer_prompt/__init__.py:
+```python
+package_path = Path(__file__).resolve().parent
+ANSWER_SYSTEM_PROMPT = load_prompt(package_path, "answer_system_prompt.txt")
+ANSWER_HUMAN_PROMPT = load_prompt(package_path, "answer_human_prompt.txt")
+```
+* Ở phần này, tôi cũng có chỉnh sửa lại hàm get_chat() 1 chút để chúng ta có thể truyền tên model riêng cho từng node:
+```python
+def get_chat(role: str | None = None, temperature: float = 0.0):
+    provider = env("LLM_PROVIDER", "ollama").lower()  # Trong project này thì chỉ dùng provider chung thôi
+    model = env(f"{role}_MODEL".upper(), env("LLM_MODEL", "llama3.1:8b")).lower()
+    print(f"[LLM] Provider={provider}, Model={model}, Temp={temperature}")
+    ...
+```
+* Hàm get_retriever() cũng được tôi thêm vào 1 cách thức truy vấn khác:
+```python
+def get_retriever(top_k: int = TOP_K):
+    vs = get_vectorstore()
+    mode = RETRIEVER_MODE
+    print("Retriever mode:", mode, "| top_k:", top_k)
+
+    base = vs.as_retriever(
+            search_type="similarity",
+            search_kwargs={"k": top_k}
+        )
+    if mode == "mq":
+        llm = get_chat("MQR", temperature=0)
+        mqr = MultiQueryRetriever.from_llm(retriever=base, llm=llm, include_original=True)
+
+        class _Adapter:
+            @staticmethod # phương thức không cần tham chiếu đến lớp (không truyền self)
+            def invoke(q: str):
+                docs = mqr.invoke(q)
+                return docs[:top_k]
+        return _Adapter()
+
+    if mode == "similarity":
+        return base
+
+    return vs.as_retriever(
+        search_type="mmr",
+        search_kwargs={"k": top_k, "fetch_k": max(20, 5 * top_k)}
+        # search_kwargs={"k": top_k}
+    )
+```
+* Bổ sung bên phía file .env (tôi nghĩ MQR_MODEL nên để mô hình khác vì thấy mô hình tôi dùng kém hơn so với x-ai, hãy 
+thử hoán đổi xem nha):
+```
+GRADE_MODEL=deepseek/deepseek-chat-v3.1:free
+ANSWER_MODEL=x-ai/grok-4-fast:free
+JUDGE_MODEL=google/gemini-2.0-flash-exp:free
+REWRITE_MODEL=x-ai/grok-4-fast:free
+MQR_MODEL=tngtech/deepseek-r1t2-chimera:free
+```
+* Tạo các node:
+```python
+# ----- Node: retrieve -----
+def retrieve_node(state: QAState) -> QAState:
+    q = state.get("rewritten", None) or state["question"]
+    k = state.get("k", 6)
+    retriever = get_retriever(k)
+    docs = retriever.invoke(q)
+    return {"context": docs}
+
+
+# ----- Node: grade (lọc tài liệu) -----
+_GRADER = get_chat("GRADE", temperature=0)
+
+GRADER_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", GRADE_SYSTEM_PROMPT),
+    ("human", GRADE_HUMAN_PROMPT)
+])
+
+
+def grade_node(state: QAState) -> QAState:
+    q = state.get("rewritten", None) or state["question"]
+    docs = state["context"]
+    kept: List[Document] = []
+    grand_chain = GRADER_PROMPT | _GRADER | (lambda x: x.content.strip().upper())
+    for d in docs:
+        res = grand_chain.invoke({
+            "question": q,
+            "doc": d
+        })
+        if res.startswith("Y"):
+            kept.append(d)
+
+        if not kept:
+            kept = docs[:3]
+
+    return {"context": kept}
+
+
+# ----- Node: answer -----
+_ANSWER_LLM = get_chat("ANSWER", temperature=0.2)  # Tăng độ sáng tạo một chút
+
+_ANSWER_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", ANSWER_SYSTEM_PROMPT),
+    ("human", ANSWER_HUMAN_PROMPT)
+])
+
+
+def _format_context(docs: List[Document]) -> str:
+    part = []
+    for i, d in enumerate(docs):
+        snippet = d.page_content.strip().replace("\n", " ")
+        src = d.metadata.get("source", "")
+        part.append(f"[{i+1}] {snippet} (SOURCE: {src})")
+
+    return "\n\n".join(part) if part else "(Không có ngữ cảnh)"
+
+
+def answer_node(state: QAState) -> QAState:
+    q = state.get("rewritten", None) or state["question"]
+    docs = state["context"]
+    context = _format_context(docs)
+    answer_chain = _ANSWER_PROMPT | _ANSWER_LLM | (lambda x: x.content.strip())
+    res = answer_chain.invoke({
+        "question": q,
+        "context": context
+    })
+    return {"answer": res}
+
+
+# ----- Node: judge -----
+_JUDGE_LLM = get_chat("JUDGE", temperature=0)
+
+_JUDGE_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", JUDGE_SYSTEM_PROMPT),
+    ("human", JUDGE_HUMAN_PROMPT)
+])
+
+
+def judge_node(state: QAState) -> QAState:
+    q = state.get("rewritten", None) or state["question"]
+    docs = state["context"]
+    context = _format_context(docs)
+    ans = state["answer"]
+    judge_chain = _JUDGE_PROMPT | _JUDGE_LLM | (lambda x: x.content.strip().upper())
+    res = judge_chain.invoke({
+        "question": q,
+        "context": context,
+        "answer": ans
+    })
+    verdict: Literal["good", "retry"] = "good" if res.startswith("G") else "retry"
+    return {"verdict": verdict}
+
+
+# ----- Node: rewrite_query (khi RETRY) -----
+_REWRITER = get_chat("REWRITE", temperature=0)
+
+REWRITE_PROMPT = ChatPromptTemplate.from_messages([
+    ("system", REWRITE_SYSTEM_PROMPT),
+    ("human", REWRITE_HUMAN_PROMPT)
+])
+
+
+def rewrite_node(state: QAState) -> QAState:
+    q = state["question"]
+    rewriter_chain = REWRITE_PROMPT | _REWRITER | (lambda x: x.content.strip())
+    res = rewriter_chain.invoke({
+        "question": q
+    })
+    iters = state.get("iterations", 0) + 1
+    return {"rewritten": res, "iterations": iters}
+```
+* Tạo graph:
+```python
+# ----- Build graph -----
+def build_graph(max_iters: int = 2):
+    sg = StateGraph(QAState)
+
+    sg.add_node("retrieve", retrieve_node)
+    sg.add_node("grade", grade_node)
+    sg.add_node("answer", answer_node)
+    sg.add_node("judge", judge_node)
+    sg.add_node("rewrite_query", rewrite_node)
+
+    sg.add_edge(START, "retrieve")
+    sg.add_edge("retrieve", "grade")
+    sg.add_edge("grade", "answer")
+    sg.add_edge("answer", "judge")
+
+    def should_retry(state: QAState) -> Literal["end", "rewrite"]:
+        if state.get("verdict") == "good":
+            return "end"
+        if state.get("iterations", 0) >= max_iters:
+            return "end"
+        return "rewrite"
+
+    sg.add_conditional_edges(
+        "judge",
+        should_retry,
+        {
+            "end": END,  # Kết thúc
+            "rewrite": "rewrite_query"
+        }
+    )
+    sg.add_edge("rewrite_query", "retrieve")
+    
+    # Debug đơn giản với MemorySaver
+    memory = MemorySaver()
+    app = sg.compile(checkpointer=memory)
+
+    return app
+```
+* Tạo lệnh commands/qa_graph.py để chạy các agents này:
+```python
+class Command(BaseCommand):
+    help = "Generate a QA graph from the database."
+
+    def add_arguments(self, parser):
+        parser.add_argument("--q", required=True, help="Câu hỏi")
+        parser.add_argument("--k", type=int, default=TOP_K, help="số đoạn lấy ở retriever")
+        parser.add_argument("--max_iters", type=int, default=2, help="số vòng tối đa")
+
+    def handle(self, *args, **opts):
+        q = opts["q"]
+        k = opts["k"]
+        max_iters = opts["max_iters"]
+
+        app, memory = build_graph(max_iters)
+
+        state = {
+            "question": q,
+            "k": k,
+            "iterations": 0
+        }
+
+        tid = "cli-" + hashlib.md5(q.encode("utf-8")).hexdigest()[:8]
+        cfg = {
+            "configurable":
+                {
+                    "thread_id": tid,
+                }
+        }
+
+        final = app.invoke(state, config=cfg)
+        print("[INVOKE] DONE")
+        print(f"Memory:")
+        checkpoints = list(memory.list(cfg))
+        for cp in checkpoints:
+            print(cp)
+        print()
+
+        answer = final.get("answer", "").strip()
+        verdict = final.get("verdict", "good")
+        self.stdout.write(self.style.SUCCESS(f"[{verdict}]\n{answer}"))
+```
+_Chú ý:_ 
+
+Ngoài cách debug trên CLI với MemorySaver(), các bạn cũng có thể sử dụng extension AI Agent Debugger trên PyCharm 
+để có giao diện trực quan hơn. 
+
+Nhớ rằng phải cấu hình running trên PyCharm lệnh mà bản thân muốn chạy chứ không thể chạy lệnh trực tiếp trên CLI vì 
+extension kia sẽ không thể phát hiện được tiến trình.
+* Chạy thử lệnh:
+```bash
+python manage.py qa_graph --q "Mệnh Kim hợp màu gì?" 
+```
+Ta được output sau (lặp đúng 2 lần để ra kết quả tốt, mọi người có thể thử phối hợp các mô hình theo kiểu khác thử)
+```
+Server listening on 127.0.0.1:54105
+Client connected from ('127.0.0.1', 54107)
+[LLM] Provider=openrouter, Model=deepseek/deepseek-chat-v3.1:free, Temp=0
+[LLM] Provider=openrouter, Model=x-ai/grok-4-fast:free, Temp=0.2
+[LLM] Provider=openrouter, Model=google/gemini-2.0-flash-exp:free, Temp=0
+[LLM] Provider=openrouter, Model=x-ai/grok-4-fast:free, Temp=0
+Retriever mode: mq | top_k: 6
+[LLM] Provider=openrouter, Model=tngtech/deepseek-r1t2-chimera:free, Temp=0
+Retriever mode: mq | top_k: 6
+[LLM] Provider=openrouter, Model=tngtech/deepseek-r1t2-chimera:free, Temp=0
+[INVOKE] DONE
+Memory:
+CheckpointTuple...
+CheckpointTuple...
+CheckpointTuple...
+CheckpointTuple...
+CheckpointTuple...
+CheckpointTuple...
+
+[good]
+Trong phong thủy ngũ hành, mệnh Kim được liên kết với màu trắng, tượng trưng cho sự tinh khiết và kim loại sáng bóng, giúp cân bằng năng lượng trong không gian. Bạn có thể áp dụng màu trắng cho các vật dụng như tường phòng hoặc đồ trang trí để hỗ trợ mệnh Kim, kết hợp với chất liệu kim loại để tăng cường dòng chảy dương. Ngoài ra, các màu trung tính như xám bạc cũng có thể hỗ trợ gián tiếp qua tương sinh từ Thổ.
+
+Nguồn: phong_thuy_toan_tap.pdf (từ [4]), fengshui_phong_thuy_toan_tap.pdf (từ [1] và [2]).
+Client disconnected
+
+Process finished with exit code 0
+```
+* Các event được AI Agent Debuger tracing được:
+![ai_agent_debuger_events.png](images/ai_agent_debuger_events.png)
+* Đồ thị mà AI Agent Debuger tạo dựa trên các node được phát hiện:
+![ai_agent_debuger_graph.png](images/ai_agent_debuger_graph.png)

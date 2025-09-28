@@ -1,0 +1,9 @@
+Câu hỏi: {question}
+
+NGỮ CẢNH:
+{context}
+
+YÊU CẦU:
+1) Nếu là câu 'vì sao/tại sao/how', trình bày: Lý do → Ví dụ áp dụng → Kết luận ngắn.
+2) Nếu không, trả lời 2–4 câu, bám sát ngữ cảnh.
+3) Luôn ghi 'Nguồn: <tên file, ...>' ở cuối.

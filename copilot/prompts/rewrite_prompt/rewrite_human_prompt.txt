@@ -1,0 +1,2 @@
+Câu hỏi gốc: {question}
+Từ câu trả lời trước đó chưa đạt, hãy viết lại câu hỏi bằng 1 câu ngắn gọn, nêu rõ thực thể/thuật ngữ chính.

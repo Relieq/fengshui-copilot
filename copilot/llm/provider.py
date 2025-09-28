@@ -7,9 +7,10 @@ from copilot.llm import env
 class ProviderError(RuntimeError):
     ...
 
-def get_chat(temperature: float = 0.0):
-    provider = env("LLM_PROVIDER", "ollama").lower()
-    model = env("LLM_MODEL", "llama3.1:8b").lower()
+
+def get_chat(role: str | None = None, temperature: float = 0.0):
+    provider = env("LLM_PROVIDER", "ollama").lower()  # Trong project này thì chỉ dùng provider chung thôi
+    model = env(f"{role}_MODEL".upper(), env("LLM_MODEL", "llama3.1:8b")).lower()
     print(f"[LLM] Provider={provider}, Model={model}, Temp={temperature}")
 
     if provider == "ollama":
