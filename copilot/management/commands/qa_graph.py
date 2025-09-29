@@ -1,8 +1,6 @@
-import hashlib
-
 from django.core.management import BaseCommand
 
-from copilot.graph.rag_graph import build_graph
+from copilot.graph.run import run_graph
 from copilot.rag.settings import TOP_K
 
 
@@ -19,30 +17,8 @@ class Command(BaseCommand):
         k = opts["k"]
         max_iters = opts["max_iters"]
 
-        app, memory = build_graph(max_iters)
+        result = run_graph(q, k, max_iters, make_thread_id_from_question=True)
 
-        state = {
-            "question": q,
-            "k": k,
-            "iterations": 0
-        }
-
-        tid = "cli-" + hashlib.md5(q.encode("utf-8")).hexdigest()[:8]
-        cfg = {
-            "configurable":
-                {
-                    "thread_id": tid,
-                }
-        }
-
-        final = app.invoke(state, config=cfg)
-        print("[INVOKE] DONE")
-        print(f"Memory:")
-        checkpoints = list(memory.list(cfg))
-        for cp in checkpoints:
-            print(cp)
-        print()
-
-        answer = final.get("answer", "").strip()
-        verdict = final.get("verdict", "good")
+        answer = result.get("answer", "").strip()
+        verdict = result.get("verdict", "good")
         self.stdout.write(self.style.SUCCESS(f"[{verdict}]\n{answer}"))

@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>RAG Ask</title></head>
+<body>
+  <h3>Fengshui Copilot</h3>
+  <textarea id="q" rows="3" cols="80" placeholder="Nhập câu hỏi…"></textarea><br/>
+  <button id="btn">Hỏi</button>
+  <pre id="out"></pre>
+  <script>
+    let thread = null;
+    document.getElementById('btn').onclick = async () => {
+      const q = document.getElementById('q').value;
+      const body = {question: q, k: 6, iters: 2, thread_id: thread};
+      const res = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+      const json = await res.json();
+      if (json.ok) thread = json.thread_id;
+      document.getElementById('out').textContent = JSON.stringify(json, null, 2);
+    };
+  </script>
+</body>
+</html>

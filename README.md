@@ -1552,3 +1552,172 @@ Process finished with exit code 0
 ![ai_agent_debuger_events.png](images/ai_agent_debuger_events.png)
 * Đồ thị mà AI Agent Debuger tạo dựa trên các node được phát hiện:
 ![ai_agent_debuger_graph.png](images/ai_agent_debuger_graph.png)
+
+# Bài 6: Tool Use + Router
+* Mục tiêu: tạo endpoint `POST /api/ask nhận {question, k?, mode?, thread_id?}` chạy rag_graph ở bài 5.
+_Đến bài này tôi lại đổi retriver mode thành mmr vì thấy nó cho kết quả tốt hơn_
+* Tạo file copilot/graph/run.py nhằm chạy graph từ code (không qua CLI như trước nữa):
+```python
+def _uniq_sources(docs: List[Document], limit: int = 8):
+    seen, out = set(), []
+    for d in docs:
+        src = d.metadata.get("source", "unknown")
+        if src in seen:
+            continue
+        seen.add(src)
+        snippet = (d.page_content or "").strip().replace("\n", " ")
+        out.append({"source": src, "snippet": snippet[:200]})
+        if len(out) >= limit:
+            break
+    return out
+
+def run_graph(question: str, k: int = TOP_K, max_iters: int = 2, tid: str | None = None,
+              make_thread_id_from_question: bool = False) -> Dict[str, Any]:
+    if make_thread_id_from_question:
+        tid = "cli-" + hashlib.md5(question.encode("utf-8")).hexdigest()[:8]
+    tid = tid or f"web-{uuid4()}"
+
+    app, memory = build_graph(max_iters)
+
+    state = {
+        "question": question,
+        "k": k,
+        "iterations": 0
+    }
+
+    cfg = {
+        "configurable":
+            {
+                "thread_id": tid,
+            }
+    }
+
+    final = app.invoke(state, config=cfg)
+    print("[INVOKE] DONE")
+    print(f"Memory:")
+    checkpoints = list(memory.list(cfg))
+    for cp in checkpoints:
+        print(cp)
+    print()
+
+    answer = final.get("answer", "").strip()
+    verdict = final.get("verdict", "good")
+    docs: List[Document] = final.get("context", [])
+    sources = _uniq_sources(docs)
+
+    return {"thread_id": tid, "answer": answer, "verdict": verdict, "sources": sources}
+```
+* Vì bên phần lệnh chạy CLI qa_graph.py bị lặp code nên tôi có chỉnh lại chút như sau:
+```python
+    def handle(self, *args, **opts):
+        q = opts["q"]
+        k = opts["k"]
+        max_iters = opts["max_iters"]
+
+        result = run_graph(q, k, max_iters, make_thread_id_from_question=True)
+
+        answer = result.get("answer", "").strip()
+        verdict = result.get("verdict", "good")
+        self.stdout.write(self.style.SUCCESS(f"[{verdict}]\n{answer}"))
+```
+* Ở đây chúng ta sẽ triển khai theo kiến trúc MVT của Django. Trước tiên sẽ tạo file copilot/views/api.py:
+```python
+@csrf_exempt
+def api_ask(req):
+    if req.method != "POST":
+        return HttpResponseBadRequest("POST only")
+
+    try:
+        data = json.loads(req.body.decode('utf-8'))
+        q = str(data['question']).strip()
+    except RuntimeError:
+        return HttpResponseBadRequest("Missing 'question'")
+
+    k = int(data.get('k', TOP_K))
+    max_iters = int(data.get('max_iters', 2))
+    thread_id = data.get('thread_id', None)
+
+    try:
+        result = run_graph(q, k, max_iters, tid=thread_id, make_thread_id_from_question=True)
+        return JsonResponse({"ok": True, **result})
+    except Exception as e:
+        return JsonResponse({"ok": False, "error": type(e).__name__, "detail": str(e)}, status=500)
+```
+* Tạo tiếp file render các page copilot/views/pages.py:
+```python
+def page_ask(req):
+    return render(req, "ask.html")
+```
+* Tạo template copilot/templates/ask.html (cái này tôi không viết code trực tiếp mà dùng ChatGPT để tạo, bạn có thể tham khảo):
+```html
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>RAG Ask</title></head>
+<body>
+  <h3>Fengshui Copilot</h3>
+  <textarea id="q" rows="3" cols="80" placeholder="Nhập câu hỏi…"></textarea><br/>
+  <button id="btn">Hỏi</button>
+  <pre id="out"></pre>
+  <script>
+    let thread = null;
+    document.getElementById('btn').onclick = async () => {
+      const q = document.getElementById('q').value;
+      const body = {question: q, k: 6, iters: 2, thread_id: thread};
+      const res = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+      const json = await res.json();
+      if (json.ok) thread = json.thread_id;
+      document.getElementById('out').textContent = JSON.stringify(json, null, 2);
+    };
+  </script>
+</body>
+</html>
+
+```
+* Tạo file copilot/urls.py để định tuyến URL:
+```python
+urlpatterns = [
+    path("api/ask", api_ask, name="api_ask"),
+    path("ask", page_ask, name="page_ask"),
+]
+```
+* Chỉnh sửa file fengshui_copilot/urls.py để include copilot.urls:
+```python
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("copilot.urls")),
+]
+```
+* Tạo file test.http để test /api/ask:
+```http request
+POST http://127.0.0.1:8000/api/ask
+Content-Type: application/json
+
+{
+  "question": "Mệnh Kim hợp màu gì?",
+  "k": 6,
+  "max_iters": 2
+}
+```
+Output:
+```json
+{
+  "ok": true,
+  "thread_id": "cli-63594dd0",
+  "answer": "Mệnh Kim hợp với các màu thuộc hành Kim như trắng, xám hoặc bạc, vì chúng tượng trưng cho sự khởi đầu mới và có thể hỗ trợ cân bằng năng lượng. Những màu này giúp tăng cường tính chất của mệnh Kim, đồng thời có thể làm dịu bớt các hành khác như Hỏa hoặc hỗ trợ cho mệnh Thủy. Trong phong thủy, việc chọn màu trắng hoặc bạc cho các vật dụng như xe cộ cũng được khuyến nghị để mang lại sự an toàn và hài hòa.\n\nNguồn: phong_thuy_toan_tap.pdf, fengshui_phong_thuy_toan_tap.pdf",
+  "verdict": "good",
+  "sources": [
+    {
+      "source": "phong_thuy_toan_tap.pdf",
+      "snippet": "chắc chắn rằng màu này không xung khắc với màu Ngũ hành tương ứng với tuổi của mình. Ví dụ, một thanh niên đầy vẻ nam tính, nhất là tuổi Ngọ mạng Hỏa, không nên chọn xe màu đỏ vì màu này làm tăng thêm"
+    },
+    {
+      "source": "fengshui_phong_thuy_toan_tap.pdf",
+      "snippet": "đó.   Tính chất của Ngũ Hành  Màu lục (Mộc): công việc kinh doanh mới, sự tăng trưởng và phát triển.  Màu đỏ (Hỏa): năng động, sốt sắng và xởi lởi, hướng đến tương lai.  Màu vàng (Thổ): trí tuệ, chừng"
+    }
+  ]
+}
+```
+* Vào tiếp đường dẫn sau trên web để test giao diện /ask: http://127.0.0.1:8000/ask
+![simple_ask_page.png](images/simple_ask_page.png)
+
+# Bài 7:

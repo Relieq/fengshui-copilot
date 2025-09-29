@@ -1,0 +1,21 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=PyCharm
+
+###
+# curl -X POST http://127.0.0.1:8000/api/ask
+#  -H "Content-Type: application/json"
+#  -d '{"question":"Mệnh Kim hợp màu gì?","k":6,"iters":2}'
+POST http://127.0.0.1:8000/api/ask
+Content-Type: application/json
+
+{
+  "question": "Mệnh Kim hợp màu gì?",
+  "k": 6,
+  "max_iters": 2
+}
+###
+2025-09-29T111840.200.json
+###
+
+
