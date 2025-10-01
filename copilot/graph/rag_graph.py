@@ -24,6 +24,11 @@ class QAState(TypedDict, total=False):  # total=False để các trường khôn
     iterations: int  # số vòng đã lặp
     verdict: Literal["good", "retry"]  # verdict: phán quyết
 
+def _emit(state: QAState, event: str, data):
+    emit = state.get("emit", None)
+    if callable(emit):
+        emit(event, data)
+
 
 # ----- Node: retrieve -----
 def retrieve_node(state: QAState) -> QAState:
@@ -31,23 +36,31 @@ def retrieve_node(state: QAState) -> QAState:
     k = state.get("k", 6)
     retriever = get_retriever(k)
     docs = retriever.invoke(q)
+
+    for d in docs:
+        src = d.metadata.get("source", "unknown")
+        snippet = (d.page_content or "").strip().replace("\n", " ")[:200]
+        _emit(state, "source", {"source": src, "snippet": snippet})
+
+    _emit(state, "phase", "retrieve_done")
     return {"context": docs}
 
 
 # ----- Node: grade (lọc tài liệu) -----
 _GRADER = get_chat("GRADE", temperature=0)
 
-GRADER_PROMPT = ChatPromptTemplate.from_messages([
+_GRADER_PROMPT = ChatPromptTemplate.from_messages([
     ("system", GRADE_SYSTEM_PROMPT),
     ("human", GRADE_HUMAN_PROMPT)
 ])
 
 
 def grade_node(state: QAState) -> QAState:
+    _emit(state, "phase", "grade_start")
     q = state.get("rewritten", None) or state["question"]
     docs = state["context"]
     kept: List[Document] = []
-    grand_chain = GRADER_PROMPT | _GRADER | (lambda x: x.content.strip().upper())
+    grand_chain = _GRADER_PROMPT | _GRADER | (lambda x: x.content.strip().upper())
     for d in docs:
         res = grand_chain.invoke({
             "question": q,
@@ -55,10 +68,12 @@ def grade_node(state: QAState) -> QAState:
         })
         if res.startswith("Y"):
             kept.append(d)
+            _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "keep"})
+        _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "drop"})
 
         if not kept:
             kept = docs[:3]
-
+    _emit(state, "phase", "grade_done")
     return {"context": kept}
 
 
@@ -82,14 +97,24 @@ def _format_context(docs: List[Document]) -> str:
 
 
 def answer_node(state: QAState) -> QAState:
+    _emit(state, "phase", "answer_start")
     q = state.get("rewritten", None) or state["question"]
     docs = state["context"]
     context = _format_context(docs)
     answer_chain = _ANSWER_PROMPT | _ANSWER_LLM | (lambda x: x.content.strip())
-    res = answer_chain.invoke({
+
+    buffer = []
+    for chunk in answer_chain.stream({
         "question": q,
         "context": context
-    })
+    }):
+        piece = getattr(chunk, "content", "")
+        if piece:
+            buffer.append(piece)
+            _emit(state, "token", piece)
+
+    res = "".join(buffer).strip()
+    _emit(state, "phase", "answer_done")
     return {"answer": res}
 
 
@@ -103,6 +128,7 @@ _JUDGE_PROMPT = ChatPromptTemplate.from_messages([
 
 
 def judge_node(state: QAState) -> QAState:
+    _emit(state, "phase", "judge_start")
     q = state.get("rewritten", None) or state["question"]
     docs = state["context"]
     context = _format_context(docs)
@@ -114,6 +140,7 @@ def judge_node(state: QAState) -> QAState:
         "answer": ans
     })
     verdict: Literal["good", "retry"] = "good" if res.startswith("G") else "retry"
+    _emit(state, "verdict", verdict)
     return {"verdict": verdict}
 
 
@@ -127,12 +154,14 @@ REWRITE_PROMPT = ChatPromptTemplate.from_messages([
 
 
 def rewrite_node(state: QAState) -> QAState:
+    _emit(state, "phase", "rewrite_start")
     q = state["question"]
     rewriter_chain = REWRITE_PROMPT | _REWRITER | (lambda x: x.content.strip())
     res = rewriter_chain.invoke({
         "question": q
     })
     iters = state.get("iterations", 0) + 1
+    _emit(state, "rewrite", {"new_query": res, "iter": iters})
     return {"rewritten": res, "iterations": iters}
 
 

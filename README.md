@@ -1720,4 +1720,21 @@ Output:
 * Vào tiếp đường dẫn sau trên web để test giao diện /ask: http://127.0.0.1:8000/ask
 ![simple_ask_page.png](images/simple_ask_page.png)
 
-# Bài 7:
+# Bài 7: Streaming
+* Một số khái niệm:
+  * Streaming: server đẩy dần từng phần kết quả (token/phase) về client thay vì chờ xong toàn bộ.
+  * SSE (Server-Sent Events): kỹ thuật push từ server đến client qua HTTP, client mở kết nối lâu dài (long-lived connection). 
+  Dùng HTTP text/event-stream, client đọc bằng EventSource. Đơn giản, một chiều (server → client).
+  * Django StreamingHttpResponse: cho phép gửi từng chunk dữ liệu về client ngay khi có sẵn. Hợp để làm SSE.
+  * LangChain stream: hầu hết chat models đều hỗ trợ .stream(...) để lấy dần token.
+* Mục tiêu: tạo endpoint `POST /api/ask_stream` (SSE) → đẩy các event:
+  * phase: retrieve/grade/answer/judge/rewrite
+  * source: từng nguồn
+  * kept: từng tài liệu được giữ lại sau grade
+  * token: từng mẩu text của câu trả lời
+  * final: kết quả cuối cùng, verdict, thread_id
+## Các bước thực hiện
+* Tạo view SSE: thêm endpoint mới trong copilot/views/api.py
+```python
+
+```

@@ -1,21 +1,74 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"><title>RAG Ask</title></head>
-<body>
-  <h3>Fengshui Copilot</h3>
-  <textarea id="q" rows="3" cols="80" placeholder="Nhập câu hỏi…"></textarea><br/>
-  <button id="btn">Hỏi</button>
-  <pre id="out"></pre>
-  <script>
-    let thread = null;
-    document.getElementById('btn').onclick = async () => {
-      const q = document.getElementById('q').value;
-      const body = {question: q, k: 6, iters: 2, thread_id: thread};
-      const res = await fetch('/api/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-      const json = await res.json();
-      if (json.ok) thread = json.thread_id;
-      document.getElementById('out').textContent = JSON.stringify(json, null, 2);
-    };
-  </script>
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>RAG Ask</title>
+  </head>
+  <body>
+    <h3>Fengshui Copilot</h3>
+    <textarea id="q" rows="3" cols="80" placeholder="Nhập câu hỏi…"></textarea><br/>
+    <button id="btn">Hỏi (non-stream)</button>
+    <button id="btns">Hỏi (stream)</button>
+    <pre id="out"></pre>
+    <script>
+      let thread = null;
+      document.getElementById('btn').onclick = async () => {
+        const q = document.getElementById('q').value;
+        const body = {question: q, k: 6, iters: 2, thread_id: thread};
+        const res = await fetch('/api/ask', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+        const json = await res.json();
+        if (json.ok) thread = json.thread_id;
+        document.getElementById('out').textContent = JSON.stringify(json, null, 2);
+      };
+      document.getElementById('btns').onclick = async () => {
+        const q = document.getElementById('q').value;
+        const res = await fetch('/api/ask/stream', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({question: q, k: 6, thread_id: thread})
+        });
+        const reader = res.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        while (true) {
+          const {value, done} = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, {stream: true});
+          // simple SSE parsing
+          const parts = buf.split('\n\n');
+          buf = parts.pop();
+          for (const evt of parts) {
+            const lines = evt.split('\n');
+            let type = 'message', data = '';
+            for (const ln of lines) {
+              if (ln.startsWith('event:')) type = ln.slice(6).trim();
+              if (ln.startsWith('data:'))  data += ln.slice(5).trim();
+            }
+            if (type === 'token') {
+              out.textContent += data; // append token
+            } else if (type === 'source') {
+              const s = JSON.parse(data);
+              out.textContent += `\n[SRC] ${s.source}: ${s.snippet}\n`;
+            } else if (type === 'grade') {
+              const s = JSON.parse(data);
+              out.textContent += `\n[SRC] ${s.source}: ${s.decision}\n`;
+            } else if (type === 'phase') {
+              out.textContent += `\n>> ${data.toUpperCase()} <<\n`;
+            } else if (type === 'final') {
+              const j = JSON.parse(data);
+              thread = j.thread_id || thread;
+              out.textContent += `\n\n=== VERDICT: ${j.verdict.toUpperCase()} ===\n`;
+            } else if (type === 'rewrite') {
+              const info = JSON.parse(data);
+              out.textContent += `\n[REWRITE] → ${info.new_query} (iter ${info.iter})\n`;
+            }
+          }
+        }
+      };
+    </script>
+  </body>
 </html>
