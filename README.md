@@ -1273,7 +1273,7 @@ def get_chat(role: str | None = None, temperature: float = 0.0):
     print(f"[LLM] Provider={provider}, Model={model}, Temp={temperature}")
     ...
 ```
-* Hàm get_retriever() cũng được tôi thêm vào 1 cách thức truy vấn khác:
+* Hàm get_retriever() cũng được tôi thêm vào 1 cách thức truy vấn khác (chúng ta cũng có thể thử MQR với retriever là mmr):
 ```python
 def get_retriever(top_k: int = TOP_K):
     vs = get_vectorstore()
@@ -1734,7 +1734,271 @@ Output:
   * token: từng mẩu text của câu trả lời
   * final: kết quả cuối cùng, verdict, thread_id
 ## Các bước thực hiện
+* Tạo hàm hỗ trợ định dạng event SSE:
+```python
+def _sse(data: str, event: str | None = None) -> str:
+    head = f"event: {event}\n" if event else ""
+    return f"{head}data:{data}\n\n"  # Nếu muốn chỉnh sửa ở đây thì xem xét tương ứng bên ask.html nha
+```
 * Tạo view SSE: thêm endpoint mới trong copilot/views/api.py
 ```python
+@csrf_exempt
+def api_ask_stream(req):
+    if req.method != "POST":
+        return HttpResponseBadRequest("POST only")
 
+    try:
+        payload = json.loads(req.body.decode('utf-8'))
+        q = str(payload['question']).strip()
+    except RuntimeError:
+        return HttpResponseBadRequest("Missing 'question'")
+
+    k = int(payload.get('k', TOP_K))
+    max_iters = int(payload.get('max_iters', 2))
+    thread_id = payload.get('thread_id', None)
+    ...
 ```
+* Tạo Generator trong hàm trên để yield events theo format SSE, client nhận và hiển thị realtime:
+```python
+def event_stream():
+    q_out: queue.Queue[tuple[str, str]] = queue.Queue()  # Thread-safe queue để giao tiếp giữa thread
+
+    def emit(event: str, data):
+        q_out.put((event, json.dumps(data) if not isinstance(data, str) else data))
+
+    def run_graph_thread():
+        # Không thể tái sử dụng run_graph vì nó không hỗ trợ streaming (không có "emit" callback)
+        try:
+            app, memory = build_graph(max_iters)
+            tid = thread_id or f"sse-{os.getpid()}"
+            print(f"[INVOKE] START thread_id={tid}")
+
+            state = {
+                "question": q,
+                "k": k,
+                "iterations": 0,
+                "emit": emit  
+              # Việc thêm Callable vào state sẽ gây lỗi nếu không điều chỉnh do Serializer của MemorySaver() do 
+              # không thể xử lí loại đối tượng này 
+            }
+
+            cfg = {
+                "configurable":
+                    {
+                        "thread_id": tid,
+                    }
+            }
+
+            final = app.invoke(state, config=cfg)
+            print(f"[INVOKE] Thread {tid} DONE")
+
+            answer = final.get("answer", "").strip()
+            verdict = final.get("verdict", "good")
+
+            rest = {
+                "thread_id": tid,
+                "answer": answer,
+                "verdict": verdict,
+            }
+
+            q_out.put(("final", json.dumps(rest)))
+        except Exception as e:
+            # đẩy lỗi ra client để bạn thấy ngay trong UI
+            q_out.put(("error", json.dumps({"type": type(e).__name__, "msg": str(e)}, ensure_ascii=False)))
+
+        q_out.put(("__done__", ""))
+    
+    # Tạo thread chạy song song, chú ý phải đặt daemon=True để nó nếu ngắt chương trình thì thread này cũng dừng
+    # theo, nếu không chương trình chỉ thoát sau khi tất cả non-daemon threads kết thúc (hoặc bị join()).
+    t = threading.Thread(target=run_graph_thread, daemon=True)
+    t.start()
+
+    while True:
+        ev, data = q_out.get()
+        if ev == "__done__":
+            break
+        yield _sse(data, ev)
+```
+* Trả về StreamingHttpResponse:
+```python
+# Trả response SSE để client (như brower) nhận từng event
+...
+resp = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+# giúp proxy/nginx không buffer SSE
+resp["Cache-Control"] = "no-cache"
+resp["X-Accel-Buffering"] = "no"
+return resp
+```
+* Sửa đổi tương ứng cho file rag_graph.py để hỗ trợ streaming:
+```python
+class QAState(TypedDict, total=False):
+    ...
+    emit: Callable | None
+
+    
+# Hàm phụ trợ để phát sự kiện
+def _emit(state: QAState, event: str, data):
+    emit = state.get("emit", None)
+    if callable(emit):
+        print(f"[EMIT] event={event} data={data}")
+        emit(event, data)
+
+        
+def retrieve_node(state: QAState) -> QAState:
+    _emit(state, "phase", "retrieve_start")
+    ...
+
+    for d in docs:
+        src = d.metadata.get("source", "unknown")
+        snippet = (d.page_content or "").strip().replace("\n", " ")[:200]
+        _emit(state, "source", {"source": src, "snippet": snippet})
+
+    _emit(state, "phase", "retrieve_done")
+    return {"context": docs}
+
+
+def grade_node(state: QAState) -> QAState:
+    _emit(state, "phase", "grade_start")
+    ...
+    
+    for d in docs:
+        ...
+        if res.startswith("Y"):
+            kept.append(d)
+            _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "keep"})
+        else:
+            _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "drop"})
+
+        if not kept:
+            kept = docs[:3]
+    _emit(state, "phase", "grade_done")
+    return {"context": kept}
+
+
+def answer_node(state: QAState) -> QAState:
+    _emit(state, "phase", "answer_start")
+    ...
+
+    answer_chain = _ANSWER_PROMPT | _ANSWER_LLM  #| (lambda x: x.content.strip()) # Bỏ lambda để hỗ trợ streaming
+    
+    buffer = []
+    for chunk in answer_chain.stream({
+        "question": q,
+        "context": context
+    }):
+        piece = getattr(chunk, "content", "")
+        if piece:
+            buffer.append(piece)
+            _emit(state, "token", piece)
+
+    res = "".join(buffer).strip()
+    _emit(state, "phase", "answer_done")
+    return {"answer": res}
+
+
+def judge_node(state: QAState) -> QAState:
+    _emit(state, "phase", "judge_start")
+    ...
+    
+    _emit(state, "verdict", verdict)
+    return {"verdict": verdict}
+
+
+def rewrite_node(state: QAState) -> QAState:
+    _emit(state, "phase", "rewrite_start")
+    ...
+
+    _emit(state, "rewrite", {"new_query": res, "iter": iters})
+    return {"rewritten": res, "iterations": iters}
+```
+* Thêm class custom SerializerProtocol (mặc định ở MemorySaver() là None) để xử lí lỗi khi truyền Callable vào state:
+```python
+class CustomSerdeProtocol(SerializerProtocol):
+    def dumps(self, obj):
+        # Lọc bỏ các hàm trước khi serialize, vì chúng ta cũng chỉ dùng mỗi dict nên :))
+        if isinstance(obj, dict):
+            filtered_obj = {k: v for k, v in obj.items() if not callable(v)}
+            return msgpack.dumps(filtered_obj)
+        return msgpack.dumps(obj)
+
+    def loads(self, data):
+        return msgpack.loads(data, raw=False)
+```
+* Sau đó chỉnh lại tương ứng ở hàm build_graph():
+```python
+memory = MemorySaver(serde=CustomSerdeProtocol())
+```
+* Chỉnh sửa file copilot/urls.py để thêm đường dẫn mới:
+```python
+urlpatterns = [
+    path("api/ask", api_ask, name="api_ask"),
+    path("api/ask/stream", api_ask_stream, name="api_ask_stream"),
+    path("ask", page_ask, name="page_ask"),
+]
+```
+* Chỉnh sửa template ask.html tạo nút "Hỏi (stream)" để gọi /api/ask_stream:
+```html
+...
+<button id="btn">Hỏi (non-stream)</button>
+<button id="btns">Hỏi (stream)</button>
+...
+
+<script>
+  ...
+  document.getElementById('btns').onclick = async () => {
+    const q = document.getElementById('q').value;
+    const res = await fetch('/api/ask/stream', {
+      method: 'POST',
+      headers: {'Content-Type': 'text/event-stream'},
+      body: JSON.stringify({question: q, k: 6, thread_id: thread})
+    });
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, {stream: true});
+      // simple SSE parsing
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for (const evt of parts) {
+        const lines = evt.split('\n');
+        let type = 'message', data = '';
+        for (const ln of lines) {
+          if (ln.startsWith('event:')) type = ln.slice(6).trim();
+          if (ln.startsWith('data:'))  data += ln.slice(5);
+        }
+        if (type === 'token') {
+          out.textContent += data; // append token
+        } else if (type === 'source') {
+          const s = JSON.parse(data);
+          out.textContent += `\n[SRC] ${s.source}: ${s.snippet}\n`;
+        } else if (type === 'grade') {
+          const s = JSON.parse(data);
+          out.textContent += `\n[SRC] ${s.source}: ${s.decision}\n`;
+        } else if (type === 'verdict') {
+          out.textContent += `\nVerdict: ${data}\n`;
+        } else if (type === 'phase') {
+          out.textContent += `\n>> ${data.toUpperCase()} <<\n`;
+        } else if (type === 'final') {
+          const j = JSON.parse(data);
+          thread = j.thread_id || thread;
+          out.textContent += `\n\n=== VERDICT: ${j.verdict.toUpperCase()} ===\n`;
+        } else if (type === 'rewrite') {
+          const info = JSON.parse(data);
+          out.textContent += `\n[REWRITE] → ${info.new_query} (iter ${info.iter})\n`;
+        } else if (type === 'error') {
+          const err = JSON.parse(data);
+          out.textContent += `\n[ERROR] ${err.type}: ${err.msg}\n`;
+        }
+      }
+    }
+  };
+</script>
+...
+```
+
+* Test thử: truy cập http://localhost:8000/ask, nhập câu hỏi "Mệnh Kim hợp màu gì?" rồi bấm "Hỏi (stream)".
+Chú ý phần câu trả lời sẽ thấy nó hiện dần lên như trong ChatGPT, GROK,... vậy.
+![demo_template_screen.jpeg](images/demo_template_screen.jpeg)

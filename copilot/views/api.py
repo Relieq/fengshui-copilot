@@ -17,9 +17,11 @@ from copilot.prompts.grade_prompt import GRADE_SYSTEM_PROMPT, GRADE_HUMAN_PROMPT
 from copilot.rag.retriever import get_retriever
 from copilot.rag.settings import TOP_K
 
+
 def _sse(data: str, event: str | None = None) -> str:
     head = f"event: {event}\n" if event else ""
-    return f"{head}data: {data}\n\n"
+    return f"{head}data:{data}\n\n"  # Nếu muốn chỉnh sửa ở đây thì xem xét tương ứng bên ask.html nha
+
 
 @csrf_exempt
 def api_ask_stream(req):
@@ -37,55 +39,71 @@ def api_ask_stream(req):
     thread_id = payload.get('thread_id', None)
 
     def event_stream():
-        q_out: queue.Queue[tuple[str, str]] = queue.Queue()
+        q_out: queue.Queue[tuple[str, str]] = queue.Queue()  # Thread-safe queue để giao tiếp giữa thread
 
         def emit(event: str, data):
             q_out.put((event, json.dumps(data) if not isinstance(data, str) else data))
 
-        def run_graph_thread(): # Không thể tái sử dụng run_graph vì nó không hỗ trợ streaming (không có "emit" callback)
-            app, memory = build_graph(max_iters)
-            tid = thread_id or f"sse-{os.getpid()}"
+        def run_graph_thread():
+            # Không thể tái sử dụng run_graph vì nó không hỗ trợ streaming (không có "emit" callback)
+            try:
+                app, memory = build_graph(max_iters)
+                tid = thread_id or f"sse-{os.getpid()}"
+                print(f"[INVOKE] START thread_id={tid}")
 
-            state = {
-                "question": q,
-                "k": k,
-                "iterations": 0,
-                "emit": emit
-            }
+                state = {
+                    "question": q,
+                    "k": k,
+                    "iterations": 0,
+                    "emit": emit
+                    # Việc thêm Callable vào state sẽ gây lỗi nếu không điều chỉnh do Serializer của MemorySaver() do
+                    # không thể xử lí loại đối tượng này
+                }
 
-            cfg = {
-                "configurable":
-                    {
-                        "thread_id": tid,
-                    }
-            }
+                cfg = {
+                    "configurable":
+                        {
+                            "thread_id": tid,
+                        }
+                }
 
-            final = app.invoke(state, config=cfg)
-            print("[INVOKE] DONE")
+                final = app.invoke(state, config=cfg)
+                print(f"[INVOKE] Thread {tid} DONE")
 
-            answer = final.get("answer", "").strip()
-            verdict = final.get("verdict", "good")
+                answer = final.get("answer", "").strip()
+                verdict = final.get("verdict", "good")
 
-            rest = {
-                "thread_id": tid,
-                "answer": answer,
-                "verdict": verdict,
-            }
+                rest = {
+                    "thread_id": tid,
+                    "answer": answer,
+                    "verdict": verdict,
+                }
 
-            q_out.put(("final", json.dumps(rest)))
+                q_out.put(("final", json.dumps(rest)))
+            except Exception as e:
+                # đẩy lỗi ra client để bạn thấy ngay trong UI
+                q_out.put(("error", json.dumps({"type": type(e).__name__, "msg": str(e)}, ensure_ascii=False)))
+
             q_out.put(("__done__", ""))
 
-        t = threading.Thread(target=event_stream, daemon=True)
+        # Tạo thread chạy song song, chú ý phải đặt daemon=True để nó nếu ngắt chương trình thì thread này cũng dừng
+        # theo, nếu không chương trình chỉ thoát sau khi tất cả non-daemon threads kết thúc (hoặc bị join()).
+        t = threading.Thread(target=run_graph_thread, daemon=True)
         t.start()
 
-        yield _sse("retrieve_start", "phase")
         while True:
             ev, data = q_out.get()
             if ev == "__done__":
                 break
             yield _sse(data, ev)
 
-    return StreamingHttpResponse(event_stream(), content_type='text/event-stream')
+    # Trả response SSE để client (như brower) nhận từng event
+    resp = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    # giúp proxy/nginx không buffer SSE
+    resp["Cache-Control"] = "no-cache"
+    resp["X-Accel-Buffering"] = "no"
+    return resp
+
 
 @csrf_exempt
 def api_ask(req):

@@ -28,7 +28,7 @@
         const q = document.getElementById('q').value;
         const res = await fetch('/api/ask/stream', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: {'Content-Type': 'text/event-stream'},
           body: JSON.stringify({question: q, k: 6, thread_id: thread})
         });
         const reader = res.body.getReader();
@@ -46,7 +46,7 @@
             let type = 'message', data = '';
             for (const ln of lines) {
               if (ln.startsWith('event:')) type = ln.slice(6).trim();
-              if (ln.startsWith('data:'))  data += ln.slice(5).trim();
+              if (ln.startsWith('data:'))  data += ln.slice(5);
             }
             if (type === 'token') {
               out.textContent += data; // append token
@@ -56,6 +56,8 @@
             } else if (type === 'grade') {
               const s = JSON.parse(data);
               out.textContent += `\n[SRC] ${s.source}: ${s.decision}\n`;
+            } else if (type === 'verdict') {
+              out.textContent += `\nVerdict: ${data}\n`;
             } else if (type === 'phase') {
               out.textContent += `\n>> ${data.toUpperCase()} <<\n`;
             } else if (type === 'final') {
@@ -65,6 +67,9 @@
             } else if (type === 'rewrite') {
               const info = JSON.parse(data);
               out.textContent += `\n[REWRITE] → ${info.new_query} (iter ${info.iter})\n`;
+            } else if (type === 'error') {
+              const err = JSON.parse(data);
+              out.textContent += `\n[ERROR] ${err.type}: ${err.msg}\n`;
             }
           }
         }

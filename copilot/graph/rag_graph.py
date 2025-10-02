@@ -1,8 +1,10 @@
-from typing import TypedDict, Literal, List
+from typing import TypedDict, Literal, List, Callable
 
+import msgpack
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.serde.base import SerializerProtocol
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
@@ -14,6 +16,18 @@ from copilot.prompts.rewrite_prompt import REWRITE_SYSTEM_PROMPT, REWRITE_HUMAN_
 from copilot.rag.retriever import get_retriever
 
 
+class CustomSerdeProtocol(SerializerProtocol):
+    def dumps(self, obj):
+        # Lọc bỏ các hàm trước khi serialize, vì chúng ta cũng chỉ dùng mỗi dict nên :))
+        if isinstance(obj, dict):
+            filtered_obj = {k: v for k, v in obj.items() if not callable(v)}
+            return msgpack.dumps(filtered_obj)
+        return msgpack.dumps(obj)
+
+    def loads(self, data):
+        return msgpack.loads(data, raw=False)
+
+
 # ----- State -----
 class QAState(TypedDict, total=False):  # total=False để các trường không bắt buộc phải có, có thể bổ sung dần
     question: str
@@ -23,15 +37,20 @@ class QAState(TypedDict, total=False):  # total=False để các trường khôn
     k: int  # số tài liệu lấy về
     iterations: int  # số vòng đã lặp
     verdict: Literal["good", "retry"]  # verdict: phán quyết
+    emit: Callable | None
 
+
+# Hàm phụ trợ để phát sự kiện
 def _emit(state: QAState, event: str, data):
     emit = state.get("emit", None)
     if callable(emit):
+        print(f"[EMIT] event={event} data={data}")
         emit(event, data)
 
 
 # ----- Node: retrieve -----
 def retrieve_node(state: QAState) -> QAState:
+    _emit(state, "phase", "retrieve_start")
     q = state.get("rewritten", None) or state["question"]
     k = state.get("k", 6)
     retriever = get_retriever(k)
@@ -69,7 +88,8 @@ def grade_node(state: QAState) -> QAState:
         if res.startswith("Y"):
             kept.append(d)
             _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "keep"})
-        _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "drop"})
+        else:
+            _emit(state, "grade", {"source": d.metadata.get("source", "Unknow"), "decision": "drop"})
 
         if not kept:
             kept = docs[:3]
@@ -101,7 +121,7 @@ def answer_node(state: QAState) -> QAState:
     q = state.get("rewritten", None) or state["question"]
     docs = state["context"]
     context = _format_context(docs)
-    answer_chain = _ANSWER_PROMPT | _ANSWER_LLM | (lambda x: x.content.strip())
+    answer_chain = _ANSWER_PROMPT | _ANSWER_LLM  #| (lambda x: x.content.strip()) # Bỏ lambda để hỗ trợ streaming
 
     buffer = []
     for chunk in answer_chain.stream({
@@ -198,7 +218,7 @@ def build_graph(max_iters: int = 2):
     sg.add_edge("rewrite_query", "retrieve")
 
     # Lưu memory để debug đơn giản
-    memory = MemorySaver()
+    memory = MemorySaver(serde=CustomSerdeProtocol())
     app = sg.compile(checkpointer=memory)
 
     return app, memory
