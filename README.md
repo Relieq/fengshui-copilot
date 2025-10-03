@@ -1913,16 +1913,17 @@ def rewrite_node(state: QAState) -> QAState:
 ```
 * Thêm class custom SerializerProtocol (mặc định ở MemorySaver() là None) để xử lí lỗi khi truyền Callable vào state:
 ```python
-class CustomSerdeProtocol(SerializerProtocol):
+class CustomSerdeProtocol(JsonPlusSerializer):
     def dumps(self, obj):
         # Lọc bỏ các hàm trước khi serialize, vì chúng ta cũng chỉ dùng mỗi dict nên :))
         if isinstance(obj, dict):
             filtered_obj = {k: v for k, v in obj.items() if not callable(v)}
-            return msgpack.dumps(filtered_obj)
-        return msgpack.dumps(obj)
-
-    def loads(self, data):
-        return msgpack.loads(data, raw=False)
+            return json.dumps(filtered_obj, default=self._default, ensure_ascii=False).encode(
+                "utf-8", "ignore"
+            )
+        return json.dumps(obj, default=self._default, ensure_ascii=False).encode(
+            "utf-8", "ignore"
+        )
 ```
 * Sau đó chỉnh lại tương ứng ở hàm build_graph():
 ```python
@@ -2001,4 +2002,6 @@ urlpatterns = [
 
 * Test thử: truy cập http://localhost:8000/ask, nhập câu hỏi "Mệnh Kim hợp màu gì?" rồi bấm "Hỏi (stream)".
 Chú ý phần câu trả lời sẽ thấy nó hiện dần lên như trong ChatGPT, GROK,... vậy.
-![demo_template_screen.jpeg](images/demo_template_screen.jpeg)
+* Chúng ta có thể so sánh 2 bản non-stream và stream trong 2 hình dưới đây:
+![demo_template_screen_non_stream.jpeg](images/demo_template_screen_non_stream.jpeg)
+![demo_template_screen.jpeg](images/demo_template_screen_stream.jpeg)

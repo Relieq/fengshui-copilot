@@ -1,10 +1,10 @@
-from typing import TypedDict, Literal, List, Callable
+import json
+from typing import TypedDict, Literal, List, Callable, Any
 
-import msgpack
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.checkpoint.serde.base import SerializerProtocol
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
@@ -16,16 +16,17 @@ from copilot.prompts.rewrite_prompt import REWRITE_SYSTEM_PROMPT, REWRITE_HUMAN_
 from copilot.rag.retriever import get_retriever
 
 
-class CustomSerdeProtocol(SerializerProtocol):
+class CustomSerdeProtocol(JsonPlusSerializer):
     def dumps(self, obj):
         # Lọc bỏ các hàm trước khi serialize, vì chúng ta cũng chỉ dùng mỗi dict nên :))
         if isinstance(obj, dict):
             filtered_obj = {k: v for k, v in obj.items() if not callable(v)}
-            return msgpack.dumps(filtered_obj)
-        return msgpack.dumps(obj)
-
-    def loads(self, data):
-        return msgpack.loads(data, raw=False)
+            return json.dumps(filtered_obj, default=self._default, ensure_ascii=False).encode(
+                "utf-8", "ignore"
+            )
+        return json.dumps(obj, default=self._default, ensure_ascii=False).encode(
+            "utf-8", "ignore"
+        )
 
 
 # ----- State -----

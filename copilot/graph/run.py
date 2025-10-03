@@ -21,6 +21,7 @@ def _uniq_sources(docs: List[Document], limit: int = 8):
             break
     return out
 
+
 def run_graph(question: str, k: int = TOP_K, max_iters: int = 2, tid: str | None = None,
               make_thread_id_from_question: bool = False) -> Dict[str, Any]:
     if make_thread_id_from_question:
