@@ -1,5 +1,203 @@
-Project này được tạo ra chủ yếu để học về LangChain và LangGraph. 
+Project này được tạo ra chủ yếu để học về LangChain và LangGraph.
 
+# Fengshui Copilot — Quick Start
+
+> Bản hướng dẫn chạy nhanh cho dự án Django RAG (LangChain + LangGraph) dùng Supabase, HF Inference và OpenRouter/Ollama.
+
+## 0) Yêu cầu
+- Python 3.12+, Git, venv  
+- Supabase (Project + bảng `documents` với cột `embedding` kiểu `vector(1024)`)  
+- HF API Token (dùng cho embeddings)  
+- 1 LLM provider: **OpenRouter** *hoặc* **Ollama (llama3.1:8b)**
+
+> Nếu đổi model embedding khác **1024d**, hãy sửa kích thước cột `vector(…)` và hàm SQL tương ứng.
+
+---
+
+## 1) Clone & cài đặt
+* Clone repo:
+```bash
+git clone https://github.com/relieq/fengshui-copilot.git
+```
+* Tạo tiếp môi trường ảo.
+* Cài đặt package:
+```bash
+pip install -U pip
+pip install -r requirements.txt
+```
+
+---
+
+## 2) Cấu hình `.env` (mẫu)
+Tạo file `.env` ở thư mục gốc:
+
+```env
+# Provider & Model
+LLM_PROVIDER=openrouter
+LLM_MODEL=x-ai/grok-4-fast:free
+#GRADE_MODEL=deepseek/deepseek-chat-v3.1:free
+#ANSWER_MODEL=x-ai/grok-4-fast:free
+#JUDGE_MODEL=google/gemini-2.0-flash-exp:free
+#REWRITE_MODEL=tngtech/deepseek-r1t2-chimera:free
+#MQR_MODEL=x-ai/grok-4-fast:free
+
+# Ollama
+RAG_EMBEDDING_MODEL=bge-m3
+
+# OpenRouter
+OPENROUTER_API_KEY=sk-or-xxxxxxxx
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1/
+OPENROUTER_HTTP_REFERER=http://localhost:8000
+OPENROUTER_APP_TITLE=fengshui-copilot-dev
+
+# Embeddings (Hugging Face)
+EMBED_PROVIDER=hf_endpoint
+EMBEDDING_MODEL=BAAI/bge-m3
+HUGGINGFACEHUB_API_TOKEN=hf_xxxxxxxxxxxxxxxx
+
+# Supabase (server-side ONLY)
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
+SUPABASE_TABLE=documents
+SUPABASE_QUERY_NAME=match_documents
+```
+
+---
+
+## 3) Tạo bảng & hàm tìm kiếm trên Supabase
+Trong SQL Editor của Supabase, tạo bảng và hàm (điều chỉnh nếu bạn đã tạo trước đó):
+
+```sql
+create extension if not exists vector;
+
+create table if not exists documents (
+    id bigserial primary key,
+    uid text unique,
+    content text,
+    metadata jsonb, 
+    embedding vector(1024),
+);
+
+create or replace function match_documents(
+    filter jsonb default '{}'::jsonb,
+    match_count int default 4,
+    query_embedding vector(1024) default NULL
+) returns table (
+    id bigint,
+    uid text,
+    content text,
+    metadata jsonb,
+    embedding vector(1024),
+    similarity double precision
+) language sql stable as $$
+    select
+        d.id,
+        d.uid,
+        d.content,
+        d.metadata,
+        d.embedding,
+        1 - (d.embedding <=> query_embedding) as similarity 
+    from documents as d
+    where d.metadata @> filter
+    order by d.embedding <=> query_embedding
+    limit match_count;
+$$;
+
+create index if not exists documents_embedding_idx 
+    on documents using ivfflat (embedding vector_cosine_ops)
+    with (lists = 100);
+```
+
+---
+
+## 4) Chuẩn bị dữ liệu
+Đặt tài liệu vào:  
+`data/corpus/` (hỗ trợ `.txt`, `.md`, `.pdf`).  
+Nếu có PDF lỗi mã, file mẫu đã có xử lý `decode_pdf_text()` cho một số case.
+
+---
+
+## 5) Ingest (đưa dữ liệu vào Supabase)
+```bash
+python manage.py ingest_corpus
+# hoặc làm mới sạch:
+# python manage.py ingest_corpus --reset
+```
+
+---
+
+## 6) Hỏi đáp qua CLI
+```bash
+python manage.py qa_graph --q "Mệnh Kim hợp màu gì?" --k 6 --iters 2
+```
+- Đồ thị LangGraph: `retrieve → grade → answer → judge → (rewrite?)`.  
+- Có `--deterministic` để thread_id ổn định theo câu hỏi.
+
+---
+
+## 7) Chạy server & API
+```bash
+python manage.py runserver
+```
+
+### Non-stream API
+```
+POST http://127.0.0.1:8000/api/ask
+Content-Type: application/json
+
+{"question": "Mệnh Kim hợp màu gì?", "k": 6, "iters": 2}
+```
+→ trả JSON: `answer`, `sources`, `verdict`, `thread_id`.
+
+### Streaming (SSE)
+Mở trang test: `http://127.0.0.1:8000/ask`, bấm **Hỏi (stream)** (có thể làm tương tự với non-stream).
+Bạn sẽ thấy các event: `phase`, `source`, `grade`, `token`, `verdict`, `final`.
+
+---
+
+## 8) Cấu trúc dự án (rút gọn)
+```
+copilot/
+  graph/
+    rag_graph.py        # LangGraph nodes + build_graph
+    runner.py           # run_graph() dùng chung cho CLI/API
+  llm/
+    provider.py         # get_chat(role=…, model=…)
+    embeddings.py
+  rag/
+    ingest.py           # ingest Supabase
+    retriever.py        # MMR/MQ/similarity
+  prompts/
+    answer_prompt    # ---system / ---user blocks
+    grader_prompt
+    judge_prompt
+    rewrite_prompt
+  views/
+    api.py              # /api/ask, /api/ask/stream (SSE)
+    pages.py            # /ask demo page
+  templates/
+    ask.html
+```
+
+---
+
+## 9) Lỗi thường gặp & cách xử lý nhanh
+- **HF 504** khi embed nhiều: đã chia batch; nếu vẫn gặp → giảm batch (vd 32) hoặc thử lại.  
+- **Dimension mismatch**: sửa `vector(N)` + re-ingest.  
+- **SSE không ra token**: kiểm tra request/response headers;
+- **LangGraph checkpointer lỗi serialize**: dự án dùng `CustomSerdeProtocol(JsonPlusSerializer)` để lọc `callable` khỏi state.
+
+---
+
+## 10) Tuỳ chỉnh nhanh
+- `.env`:
+  - `RETRIEVER_MODE=mmr|similarity|mq`
+  - `MODEL_ANSWER`, `MODEL_GRADER`, `MODEL_JUDGE`, `MODEL_REWRITER` (per-node model)
+- Prompt: sửa trong `copilot/prompts`.
+
+Chúc bạn build vui vẻ! 🎋
+
+# Fengshui Copilot — Hướng dẫn chi tiết
 **Features**
 * Q&A phong thủy có trích dẫn nguồn (RAG)
 * Tool: đổi lịch, gợi ý ngũ hành/màu...
@@ -12,9 +210,8 @@ Project này sẽ được thực hiện thông qua chuỗi bài học sau:
 * Bài 4 — Đánh giá nhỏ
 * Bài 5 — LangGraph: vòng lặp tự-chấm
 * Bài 6 — Tool Use + Router
-* Bài 7 — Django UI
-* Bài 8 — Theo dõi & cấu hình
-* Bài 9 — Đóng gói & bàn giao
+* Bài 7 — Streaming
+* Bài 8 — Đóng gói (Nếu sau này rảnh)
 
 _Chú ý:_ Cài đặt các package cần thiết được liệt kê trong requirements.txt
 
@@ -2005,3 +2202,6 @@ Chú ý phần câu trả lời sẽ thấy nó hiện dần lên như trong Cha
 * Chúng ta có thể so sánh 2 bản non-stream và stream trong 2 hình dưới đây:
 ![demo_template_screen_non_stream.jpeg](images/demo_template_screen_non_stream.jpeg)
 ![demo_template_screen.jpeg](images/demo_template_screen_stream.jpeg)
+
+# Bài 8: Reranker để tăng độ chính xác ngữ cảnh
+
